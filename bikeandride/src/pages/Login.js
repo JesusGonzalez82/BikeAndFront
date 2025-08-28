@@ -1,7 +1,8 @@
 import React from "react";
-import { Form, Input, Button, Typography } from "antd";
+import { Form, Input, Button,} from "antd";
 
-const { Title, Text } = Typography;
+
+// const { Title, Text } = Typography;
 
 function Home() {
   const onFinish = (values) => {
@@ -16,8 +17,20 @@ function Home() {
       justifyContent: "center", 
       height: "100vh" 
     }}>
-      <Title level={1}>BIKE AND RIDE</Title>
-      <Text type="secondary">@2025. Proyecto Desarrollo Aplicaciones Web</Text>
+      <img src="/icons/icono.svg" alt="Bike And Ride logo"
+      style={{
+        width: "180x",
+        height: "180px",
+        marginBottom: "20px",
+        transition: "transform 0.3s ease",
+        cursor: "pointer"
+      }}
+      onMouseEnter={(e) => e.target.style.transform = 'scale(1.5)'}
+      onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+      />
+      
+      {/* <Title level={1}>BIKE AND RIDE</Title>
+      <Text type="secondary">@2025. Proyecto Desarrollo Aplicaciones Web</Text> */}
 
       <Form
         name="login"
