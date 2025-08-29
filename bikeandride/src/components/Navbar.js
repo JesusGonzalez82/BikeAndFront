@@ -24,7 +24,7 @@ function Navbar({ showMenuItems = true }) {
         display: 'flex', 
         alignItems: 'center', 
         width: '100%',
-        justifyContent: showMenuItems ? 'flex-start' : 'center'
+        justifyContent: showMenuItems ? 'flex-start' : 'center',
       }}>
         
         <Title level={3} style={{ color: 'white', margin: showMenuItems ? '0 24px 0 0' : '0' }}>
