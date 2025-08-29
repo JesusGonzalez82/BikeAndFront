@@ -1,0 +1,365 @@
+/* Login.css - Adaptado a tu diseño cónico giratorio */
+@import url("https://fonts.googleapis.com/css?family=Poppins:200,300,400,500,600,700,800,900&display=swap");
+@import url("https://use.fontawesome.com/releases/v6.5.1/css/all.css");
+
+/* Reset y configuración base */
+* {
+  font-family: "Poppins", sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Container principal */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #25252b;
+}
+
+/* Propiedad personalizada para la animación */
+@property --a {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* Caja principal con efecto cónico giratorio */
+.box {
+  position: relative;
+  width: 400px;
+  height: 200px;
+  background: repeating-conic-gradient(
+    from var(--a),
+    #ff2770 0%,
+    #ff2770 5%,
+    transparent 5%,
+    transparent 40%,
+    #ff2770 50%
+  );
+  filter: drop-shadow(0 15px 50px #000);
+  border-radius: 20px;
+  animation: rotating 4s linear infinite;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: 0.5s;
+}
+
+/* Animación de rotación */
+@keyframes rotating {
+  0% {
+    --a: 0deg;
+  }
+  100% {
+    --a: 360deg;
+  }
+}
+
+/* Segundo gradiente cónico con delay */
+.box::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: repeating-conic-gradient(
+    from var(--a),
+    #45f3ff 0%,
+    #45f3ff 5%,
+    transparent 5%,
+    transparent 40%,
+    #45f3ff 50%
+  );
+  filter: drop-shadow(0 15px 50px #000);
+  border-radius: 20px;
+  animation: rotating 4s linear infinite;
+  animation-delay: -1s;
+}
+
+/* Fondo interno */
+.box::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  background: #2d2d39;
+  border-radius: 15px;
+  border: 8px solid #25252b;
+}
+
+/* Expansión al hacer hover */
+.box:hover {
+  width: 450px;
+  height: 550px; /* Aumenté un poco más la altura para el contenido */
+}
+
+.box:hover .login {
+  inset: 40px;
+}
+
+.box:hover .loginBx {
+  transform: translateY(0px);
+}
+
+/* Área de login */
+.login {
+  position: absolute;
+  inset: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  border-radius: 10px;
+  background: #00000033;
+  color: #fff;
+  z-index: 1000;
+  box-shadow: inset 0 10px 20px #00000080;
+  border-bottom: 2px solid #ffffff80;
+  transition: 0.5s;
+  overflow: hidden;
+}
+
+/* Container del formulario */
+.loginBx {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 20px;
+  width: 90%;
+  transform: translateY(126px);
+  transition: 0.5s;
+}
+
+/* Sección del logo */
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.logo {
+  width: 60px;
+  height: 60px;
+  filter: drop-shadow(0 4px 8px rgba(255, 39, 112, 0.3));
+  transition: all 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 4px 12px rgba(255, 39, 112, 0.5));
+}
+
+/* Título */
+h2 {
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+h2 i {
+  color: #ff2770;
+  text-shadow: 0 0 5px #ff2770, 0 0 20px #ff2770;
+  margin-right: 10px;
+}
+
+/* Formulario personalizado */
+.custom-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.custom-form .ant-form-item {
+  margin-bottom: 0;
+}
+
+.custom-form .ant-form-item-explain-error {
+  color: #ff2770;
+  font-size: 0.8rem;
+  margin-top: 5px;
+}
+
+/* Inputs personalizados que mantienen funcionalidad de Ant Design */
+.custom-input.ant-input,
+.custom-input.ant-input-password input {
+  width: 100% !important;
+  padding: 10px 20px !important;
+  outline: none !important;
+  border: 2px solid #fff !important;
+  border-radius: 30px !important;
+  font-size: 1em !important;
+  color: #fff !important;
+  background: #0000001a !important;
+  transition: all 0.3s ease !important;
+}
+
+.custom-input.ant-input::placeholder,
+.custom-input.ant-input-password input::placeholder {
+  color: #999 !important;
+}
+
+.custom-input.ant-input:focus,
+.custom-input.ant-input-password input:focus,
+.custom-input.ant-input:hover,
+.custom-input.ant-input-password input:hover {
+  border-color: #45f3ff !important;
+  box-shadow: 0 0 10px rgba(69, 243, 255, 0.3) !important;
+  background: #00000033 !important;
+}
+
+/* Icono del password */
+.ant-input-password-icon {
+  color: #999 !important;
+  transition: color 0.3s ease !important;
+}
+
+.ant-input-password-icon:hover {
+  color: #45f3ff !important;
+}
+
+/* Botón submit personalizado */
+.submit-btn {
+  width: 100%;
+  padding: 12px 20px;
+  background: #45f3ff;
+  border: none;
+  border-radius: 30px;
+  font-weight: 500;
+  color: #111;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.submit-btn:hover {
+  box-shadow: 0 0 10px #45f3ff, 0 0 60px #45f3ff;
+  transform: translateY(-2px);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+/* Grupo de links/botones */
+.group {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.group button {
+  background: none;
+  border: none;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  padding: 0;
+}
+
+.group button:hover {
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.group button:nth-child(2) {
+  color: #ff2770;
+  font-weight: 600;
+}
+
+.group button:nth-child(2):hover {
+  text-shadow: 0 0 5px #ff2770, 0 0 15px #ff2770;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .box {
+    width: 350px;
+    height: 180px;
+  }
+  
+  .box:hover {
+    width: 380px;
+    height: 500px;
+  }
+  
+  .loginBx {
+    width: 95%;
+  }
+  
+  h2 {
+    font-size: 1rem;
+  }
+  
+  .logo {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .group {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+/* Override estilos de Ant Design que pueden interferir */
+.ant-form-item-has-error .ant-input,
+.ant-form-item-has-error .ant-input-password input {
+  border-color: #ff2770 !important;
+}
+
+.ant-form-item-has-error .ant-input:focus,
+.ant-form-item-has-error .ant-input-password input:focus {
+  box-shadow: 0 0 10px rgba(255, 39, 112, 0.3) !important;
+}
+
+/* Animación de aparición suave */
+.loginBx > * {
+  opacity: 0;
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.logo-section {
+  animation-delay: 0.2s;
+}
+
+.custom-form .ant-form-item:nth-child(1) {
+  animation-delay: 0.4s;
+}
+
+.custom-form .ant-form-item:nth-child(2) {
+  animation-delay: 0.6s;
+}
+
+.custom-form .ant-form-item:nth-child(3) {
+  animation-delay: 0.8s;
+}
+
+.group {
+  animation-delay: 1s;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

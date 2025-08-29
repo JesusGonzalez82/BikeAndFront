@@ -8,16 +8,16 @@ function Navbar({ showMenuItems = true }) {
     <div style={{ display: 'flex', alignItems: 'center', width: "100%", height: "100%"}}>
       
       {/* Icono SIEMPRE a la izquierda */}
-      <img 
+      {/* <img 
         src="/icons/icono.svg"
         alt="BikeAndRide Logo" 
         style={{ 
           width: '64px', 
           height: '64px',
           marginRight: '0px',
-          opacity: "0.1"
+          opacity: "0.8"
         }} 
-      />
+      /> */}
       
       {/* Contenedor para título y menú */}
       <div style={{ 

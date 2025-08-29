@@ -1,10 +1,11 @@
 import React from "react";
 import { Form, Input, Button,} from "antd";
+import "../styles/login.css"
 
 
 // const { Title, Text } = Typography;
 
-function Home() {
+function Login() {
   const onFinish = (values) => {
     console.log("Datos enviados:", values);
   };
@@ -71,5 +72,5 @@ function Home() {
   );
 }
 
-export default Home;
+export default Login;
 
