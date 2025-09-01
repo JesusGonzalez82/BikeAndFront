@@ -27,14 +27,15 @@ function Login() {
           initial-value: 0deg;
         }
 
-        // .login-page-container {
-        //   display: flex;
-        //   justify-content: center;
-        //   align-items: center;
-        //   min-height: 100vh;
-        //   background: #25252b;
-        //   font-family: "Poppins", sans-serif;
-        // }
+         .login-page-container {
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           width: 100%,
+           height: 100%,
+           background: #25252b;
+           font-family: "Poppins", sans-serif;
+         }
 
         .animated-box {
           position: relative;
