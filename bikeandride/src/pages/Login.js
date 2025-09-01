@@ -42,11 +42,11 @@ function Login() {
           height: 200px;
           background: repeating-conic-gradient(
             from var(--a),
-            #ff2670 0%,
-            #ff2770 5%,
+            #fca311 0%,
+            #fca311 5%,
             transparent 5%,
             transparent 40%,
-            #ff2770 50%
+            #fca311 50%
           );
           filter: drop-shadow(0 15px 50px #000);
           border-radius: 20px;
@@ -111,7 +111,7 @@ function Login() {
           align-items: center;
           flex-direction: column;
           border-radius: 10px;
-          background: #00000033;
+          background: #fca311;
           color: #fff;
           z-index: 1000;
           box-shadow: inset 0 10px 20px #00000080;
@@ -163,8 +163,8 @@ function Login() {
         }
 
         .app-title i {
-          color: #ff2770;
-          text-shadow: 0 0 5px #ff2770, 0 0 20px #ff2770;
+          color: #48e;
+          text-shadow: 0 0 5px #fca311, 0 0 20px #fca311;
           margin-right: 8px;
         }
 
@@ -182,19 +182,19 @@ function Login() {
           border: 2px solid #fff;
           border-radius: 30px;
           font-size: 1em;
-          color: #fff;
+          color: #48e;
           background: #0000001a;
           transition: all 0.3s ease;
           font-family: "Poppins", sans-serif;
         }
 
         .bike-input::placeholder {
-          color: #999;
+          color: #000;
         }
 
         .bike-input:focus,
         .bike-input:hover {
-          border-color: #45f3ff;
+          border-color: #48e;
           box-shadow: 0 0 10px rgba(69, 243, 255, 0.3);
           background: #00000033;
         }
@@ -202,7 +202,7 @@ function Login() {
         .bike-submit {
           width: 100%;
           padding: 12px 20px;
-          background: #45f3ff;
+          background: #48e;
           border: none;
           border-radius: 30px;
           font-weight: 500;
@@ -216,7 +216,7 @@ function Login() {
         }
 
         .bike-submit:hover {
-          box-shadow: 0 0 10px #45f3ff, 0 0 60px #45f3ff;
+          box-shadow: 0 0 10px #48e, 0 0 60px #48e;
           transform: translateY(-2px);
         }
 
@@ -249,12 +249,12 @@ function Login() {
         }
 
         .link-btn.register {
-          color: #ff2770;
+          color: #48e;
           font-weight: 600;
         }
 
         .link-btn.register:hover {
-          text-shadow: 0 0 5px #ff2770, 0 0 15px #ff2770;
+          text-shadow: 0 0 5px #48e, 0 0 15px #48e;
         }
 
         /* Override para Ant Design */
@@ -263,7 +263,7 @@ function Login() {
         }
 
         .ant-form-item-explain-error {
-          color: #ff2770 !important;
+          color: #fca311 !important;
           font-size: 0.8rem !important;
           margin-top: 5px !important;
           text-align: center !important;
