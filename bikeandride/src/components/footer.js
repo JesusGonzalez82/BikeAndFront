@@ -11,7 +11,7 @@ import {
 import {Link as RouterLink} from "react-router-dom";
 
 
-const { Title, Text, Link } = Typography;
+const { Title, Text } = Typography;
 
 function Footer() {
   const footerStyle = {
