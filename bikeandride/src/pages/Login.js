@@ -1,9 +1,40 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Form } from "antd";
 
 function Login() {
-  const onFinish = (values) => {
+  const [form] = Form.useForm();
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() =>{
+    const savedUserName = localStorage.getItem('rememberUserName');
+    const savedRememberMe = localStorage.getItem('rememberMe') === true;
+
+    if (savedUserName && savedRememberMe){
+      form.setFieldValue({
+        username: savedUserName,
+        remember: true
+      });
+      setRememberMe(true);
+    }
+  }, [form]);
+
+  const onFinish = (values) =>{
     console.log("Datos enviados:", values);
+
+    if (values.remember){
+      localStorage.setItem('rememberUserName', values.username);
+      localStorage.setItem('rememberMe', 'true');
+    }else {
+      localStorage.removeItem('rememberUsername');
+      localStorage.removeItem('rememberMe');
+    }
+
+
+
+  };
+
+  const handleRememberChange = (e) =>{
+    setRememberMe(e.target.checked);
   };
 
   return (
@@ -127,7 +158,7 @@ function Login() {
           justify-content: center;
           align-items: center;
           flex-direction: column;
-          gap: 20px;
+          gap: 5px;
           width: 90%;
           transform: translateY(126px);
           transition: 0.5s;
@@ -178,7 +209,7 @@ function Login() {
 
         .bike-input {
           width: 100%;
-          padding: 10px 20px;
+          padding: 0px 20px;
           outline: none;
           border: 2px solid #fff;
           border-radius: 30px;
@@ -352,6 +383,28 @@ function Login() {
                     placeholder="Contraseña"
                     autoComplete="current-password"
                   />
+                </Form.Item>
+
+                <Form.Item
+                  name="remember"
+                  valuePropName="checked"
+                >
+                  <div className="remember-me-container">
+                    <label className="custom-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={handleRememberChange}
+                      />
+                      <span className="checkmnark"></span>
+                    </label>
+                    <label
+                      className="remember-label"
+                      onClick={() => setRememberMe(!rememberMe)}
+                      >
+                        Recordarme
+                      </label>
+                  </div>
                 </Form.Item>
 
                 <Form.Item>
