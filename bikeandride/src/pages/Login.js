@@ -5,6 +5,7 @@ function Login() {
   const [form] = Form.useForm();
   const [rememberMe, setRememberMe] = useState(false);
 
+  // Cargar los datos guardado al montar el componente
   useEffect(() =>{
     const savedUserName = localStorage.getItem('rememberUserName');
     const savedRememberMe = localStorage.getItem('rememberMe') === true;
@@ -28,8 +29,6 @@ function Login() {
       localStorage.removeItem('rememberUsername');
       localStorage.removeItem('rememberMe');
     }
-
-
 
   };
 

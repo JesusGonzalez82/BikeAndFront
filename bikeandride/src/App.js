@@ -3,10 +3,13 @@ import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "r
 import { Layout } from "antd"; // solo el componente
 import './App.css'; // tus estilos si quieres mantenerlos
 import Login from './pages/Login';
+import Home from './pages/home';
 import Navbar from './components/Navbar';
 import CustomFooter from './components/footer'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfUse from "./pages/TermsOfUse";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ProtectedRoute, PublicRoute } from "./components/ProtectedRoute";
 
 
 const { Header, Content, Footer } = Layout;
