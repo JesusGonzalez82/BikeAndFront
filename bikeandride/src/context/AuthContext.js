@@ -3,7 +3,7 @@ import React, {createContext, useContext, useState, useEffect} from "react";
 // Utilizamos Context para compartir datos entre todos los componenetes de la app, asi no tenemos que pasar
 // props manualmente de padre a hijo.
 
-const AuthContext = createContext;
+const AuthContext = createContext();
 
 export function useAuth(){
     const context = useContext(AuthContext);
@@ -15,7 +15,7 @@ export function useAuth(){
 
 export function AuthProvider({ children }){
     const [user, setUser] = useState(null);
-    const [isAuthenticated, setIsAutenticated] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
 
 
@@ -29,9 +29,9 @@ useEffect(() =>{
         try{
             const parsedUser = JSON.parse(userData);
             setUser(parsedUser);
-            setIsAutenticated(true);
+            setIsAuthenticated(true);
         }catch(error){
-            console.error('Error parsing user data: '.error);
+            console.error('Error parsing user data: ', error);
             logout();
         }  
     }
@@ -41,7 +41,7 @@ useEffect(() =>{
         localStorage.setItem('authToken', token);
         localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
-        setIsAutenticated(true);
+        setIsAuthenticated(true);
     };
 
     const logout = () =>{
@@ -49,7 +49,7 @@ useEffect(() =>{
         localStorage.removeItem('user');
         localStorage.removeItem('tokenType');
         setUser(null);
-        setIsAutenticated(false);
+        setIsAuthenticated(false);
     };
 
     const value = {

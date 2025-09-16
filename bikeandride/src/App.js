@@ -1,28 +1,40 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import { Layout } from "antd"; // solo el componente
-import './App.css'; // tus estilos si quieres mantenerlos
-import Login from './pages/Login';
-import Home from './pages/home';
-import Navbar from './components/Navbar';
-import CustomFooter from './components/footer'
-import PrivacyPolicy from './pages/PrivacyPolicy'
+import "./App.css"; // tus estilos si quieres mantenerlos
+import Login from "./pages/Login";
+import Home from "./pages/Home";
+import Navbar from "./components/Navbar";
+import CustomFooter from "./components/footer";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProtectedRoute, PublicRoute } from "./components/ProtectedRoute";
-
 
 const { Header, Content, Footer } = Layout;
 
 function LayoutWrapper() {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
+
   const isLogin = location.pathname === "/login";
+  const isHome = location.pathname === "/home";
 
   return (
-    <Layout style={{ minHeight: "100vh", display: "flex", flexDirection: "column"  }}>
-      <Header>
-        <Navbar showMenuItems={!isLogin} />
-      </Header>
+    <Layout
+      style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
+    >
+      {!isLogin && (
+        <Header>
+          <Navbar showMenuItems={!isLogin} />
+        </Header>
+      )}
 
       <Content
         style={{
@@ -32,31 +44,63 @@ function LayoutWrapper() {
           padding: isLogin ? "20px" : "20px",
           flex: 1,
           overflow: "auto",
-          minHeight: 0
+          minHeight: 0,
         }}
       >
-         <Routes>
-          <Route path="/login" element={<Login />} />
+        {/*Ruta por defecto*/}
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Navigate to={isAuthenticated ? "/home" : "/login"} replace />
+            }
+          />
+
+          {/*Ruta Pública*/}
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfUse />} />
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+
+          {/* Ruta Protegida */}
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+
+          {/*Ruta 404 */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Content>
 
-
-      <Footer style={{ padding: 0, marginTop: "auto" }}>
-        <CustomFooter />
-      </Footer>
+      {/*Footer - Se muestra excepto en Home*/}
+      {!isHome && (
+        <Footer style={{ padding: 0, marginTop: "auto" }}>
+          <CustomFooter />
+        </Footer>
+      )}
     </Layout>
   );
 }
 
 function App() {
   return (
-    <Router>
-      <LayoutWrapper />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <LayoutWrapper />
+      </Router>
+    </AuthProvider>
   );
 }
 
