@@ -16,9 +16,10 @@ function Home(){
         <div style={{
             display: 'flex',
             flexDirection: 'column',
-            // justifyContent: 'center',
+            justifyContent: 'center',
             alignItems: 'center',
-            // height: '100vh',
+            height: '100%',
+            width: '100%',
             textAlign: 'center'
         }}>
             <h1>Bienvenido a Bike And Ride</h1>

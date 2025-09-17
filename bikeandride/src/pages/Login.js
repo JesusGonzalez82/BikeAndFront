@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Form, message } from "antd";
-import { useAuth } from '../context/AuthContext';
+import { Form, message, Modal } from "antd";
+import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+
+message.config({
+  top: 100,
+  duration: 5,
+  maxCount: 3,
+});
 
 function Login() {
   const [form] = Form.useForm();
@@ -10,20 +16,21 @@ function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+
   // Datos de conexion a la API
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-  const LOGIN_ENDPOINT = '/api/auth/login';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:";
+  const LOGIN_ENDPOINT = "/api/auth/login";
 
   // Cargar los datos guardado al montar el componente
-  useEffect(() =>{
-    const savedUserName = localStorage.getItem('rememberUserName');
-    const savedRememberMe = localStorage.getItem('rememberMe') === true;
+  useEffect(() => {
+    const savedUserName = localStorage.getItem("rememberedUsername");
+    const savedRememberMe = localStorage.getItem("rememberMe") === "true";
 
-    if (savedUserName && savedRememberMe){
-      form.setFieldValue({
+    if (savedUserName && savedRememberMe) {
+      form.setFieldsValue({
         username: savedUserName,
-        remember: true
+        remember: true,
       });
       setRememberMe(true);
     }
@@ -31,41 +38,41 @@ function Login() {
 
   // Simulación de Autenticacion mientras no tenga la API real
 
-  const simulateAuth = async (username, password) =>{
-    setLoading(true);
+  const simulateAuth = async (username, password) => {
+  setLoading(true);
 
-    await new Promise(resolve =>setTimeout(resolve, 1500));
+  await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    if (username === 'admin' && password === 'admin'){
-      const mockUser = {
-        id: 1,
-        username: "admin",
-        fullName: "El gran Admin",
-        email: "emailDelAdmin@superAdmin.com"
-      };
+  if (username === "admin" && password === "admin") {
+    const mockUser = {
+      id: 1,
+      username: "admin",
+      fullName: "El gran Admin",
+      email: "emailDelAdmin@superAdmin.com",
+    };
+    
+    const mockToken = "mock-jwt-token-12345";
+    login(mockUser, mockToken);
 
-      const mockToken = 'mock-jwt-token-12345';
-
-      // Usamos el contexto para hacer login
-
-      login(mockUser, mockToken);
-
-      message.success('Bienvenido, ' + mockUser.fullName + '!');
-
-      //Redirigimos al Home
-      navigate('/Home');
-
-      setLoading(false);
-      return true;
-    } else{
-      message.error('Usuario o password incorrecta (para esta versión de prueba introduce: admin/admin');
-      setLoading(false);
-      return false;
-    }
-  };
+    navigate("/Home")
+    
+    setLoading(false);
+    return true;
+  } else {
+    console.log('Credenciales incorrectas - mostrando error');
+    
+    // Usar alert nativo para el error
+    setTimeout(() => {
+      window.alert('❌ Credenciales incorrectas\n\nPara esta versión de prueba usa:\nUsuario: admin\nContraseña: admin');
+    }, 100);
+    
+    setLoading(false);
+    return false;
+  }
+};
 
   // Funcion para autenticar cuando tenga opeativo el backend
-/*
+  /*
   const authenticatedWithAPI = async(username, password) =>{
     setLoading(true);
 
@@ -119,17 +126,17 @@ function Login() {
     }
   }
 */
-  const onFinish = async (values) =>{
+  const onFinish = async (values) => {
     console.log("Datos enviados:", values);
 
     // Manejamos el boton "Recuerdame"
 
-    if (values.remember){
-      localStorage.setItem('rememberUserName', values.username);
-      localStorage.setItem('rememberMe', 'true');
-    }else {
-      localStorage.removeItem('rememberUsername');
-      localStorage.removeItem('rememberMe');
+    if (values.remember) {
+      localStorage.setItem("rememberedUsername", values.username); // Consistente
+      localStorage.setItem("rememberMe", "true");
+    } else {
+      localStorage.removeItem("rememberedUsername"); // Mismo nombre
+      localStorage.removeItem("rememberMe");
     }
 
     // Usar simulateAuth, cambiar por authenticatedWithAPI cuando este el back terminado
@@ -138,7 +145,7 @@ function Login() {
     // await authenticatedWithAPI(values.usernamo, values.password);
   };
 
-  const handleRememberChange = (e) =>{
+  const handleRememberChange = (e) => {
     setRememberMe(e.target.checked);
   };
 
@@ -250,7 +257,7 @@ function Login() {
           border-radius: 10px;
           background: #fca311;
           color: #fff;
-          z-index: 1000;
+          z-index: 100;
           box-shadow: inset 0 10px 20px #00000080;
           border-bottom: 2px solid #ffffff80;
           transition: 0.5s;
@@ -314,12 +321,12 @@ function Login() {
 
         .bike-input {
           width: 100%;
-          padding: 0px 20px;
+          padding: 0vh 30px;
           outline: none;
           border: 2px solid #fff;
           border-radius: 30px;
           font-size: 1em;
-          color: #48e;
+          color: #000;
           background: #0000001a;
           transition: all 0.3s ease;
           font-family: "Poppins", sans-serif;
@@ -333,7 +340,7 @@ function Login() {
         .bike-input:hover {
           border-color: #48e;
           box-shadow: 0 0 10px rgba(69, 243, 255, 0.3);
-          background: #00000033;
+          background: #fff;
         }
 
         .bike-submit {
@@ -437,13 +444,106 @@ function Login() {
             gap: 8px;
           }
         }
+          .bike-submit:disabled {
+            background: #666;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .bike-submit:disabled:hover {
+          transform: none;
+          box-shadow: none;
+        }
+
+        .remember-me-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+  justify-content: center;
+}
+
+.custom-checkbox {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+}
+
+.custom-checkbox input[type="checkbox"] {
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 18px;
+  width: 18px;
+  background-color: transparent;
+  border: 2px solid #fff;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.custom-checkbox input[type="checkbox"]:checked ~ .checkmark {
+  background-color: #48e;
+  border-color: #48e;
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 4px;
+  top: 1px;
+  width: 3px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.custom-checkbox input[type="checkbox"]:checked ~ .checkmark:after {
+  display: block;
+}
+
+.remember-label {
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.ant-message {
+  z-index: 10000 !important;
+}
+
+.ant-message {
+  z-index: 10000 !important;
+  position: fixed !important;
+  top: 100px !important;
+}
+
+.ant-message-notice {
+  z-index: 10000 !important;
+}
+
+.ant-message-notice-wrapper {
+  z-index: 10000 !important;
+}
+
       `}</style>
 
       <div className="login-page-container">
         <div className="animated-box">
           <div className="login-area">
             <div className="login-content">
-              
               {/* Sección del logo */}
               <div className="logo-section">
                 {/* <img 
@@ -459,17 +559,22 @@ function Login() {
 
               {/* Formulario */}
               <Form
+                form={form}
                 name="login"
                 onFinish={onFinish}
                 className="bike-form"
+                initialValues={{ remember: false }}
               >
                 <Form.Item
                   name="username"
                   rules={[
-                    { required: true, message: "Por favor, introduce tu usuario!" }
+                    {
+                      required: true,
+                      message: "Por favor, introduce tu usuario!",
+                    },
                   ]}
                 >
-                  <input 
+                  <input
                     className="bike-input"
                     placeholder="Usuario"
                     autoComplete="username"
@@ -479,10 +584,13 @@ function Login() {
                 <Form.Item
                   name="password"
                   rules={[
-                    { required: true, message: "Por favor, introduce tu contraseña!" }
+                    {
+                      required: true,
+                      message: "Por favor, introduce tu contraseña!",
+                    },
                   ]}
                 >
-                  <input 
+                  <input
                     className="bike-input"
                     type="password"
                     placeholder="Contraseña"
@@ -490,10 +598,7 @@ function Login() {
                   />
                 </Form.Item>
 
-                <Form.Item
-                  name="remember"
-                  valuePropName="checked"
-                >
+                <Form.Item name="remember" valuePropName="checked">
                   <div className="remember-me-container">
                     <label className="custom-checkbox">
                       <input
@@ -501,45 +606,46 @@ function Login() {
                         checked={rememberMe}
                         onChange={handleRememberChange}
                       />
-                      <span className="checkmnark"></span>
+                      <span className="checkmark"></span>
                     </label>
                     <label
                       className="remember-label"
                       onClick={() => setRememberMe(!rememberMe)}
-                      >
-                        Recordarme
-                      </label>
+                    >
+                      Recordarme
+                    </label>
                   </div>
                 </Form.Item>
 
                 <Form.Item>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="bike-submit"
+                    disabled={loading} // Agregar disabled
                   >
-                    Sign In
+                    {loading ? "Iniciando sesión..." : "Sign In"}{" "}
+                    {/* Agregar texto de loading */}
                   </button>
                 </Form.Item>
               </Form>
 
               {/* Links */}
               <div className="link-group">
-                <button 
+                <button
                   className="link-btn"
-                  type="button" 
+                  type="button"
                   onClick={() => console.log("Forgot password clicked")}
                 >
                   ¿Olvidaste tu password?
                 </button>
-                <button 
+                <button
                   className="link-btn register"
-                  type="button" 
+                  type="button"
                   onClick={() => console.log("Register clicked")}
                 >
                   ¡Regístrate aquí!
                 </button>
               </div>
-
             </div>
           </div>
         </div>

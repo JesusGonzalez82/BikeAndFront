@@ -39,11 +39,11 @@ function LayoutWrapper() {
       <Content
         style={{
           display: "flex",
-          justifyContent: isLogin ? "center" : "flex-start",
-          alignItems: isLogin ? "center" : "flex-start",
-          padding: isLogin ? "20px" : "20px",
+          justifyContent: isLogin || isHome ? "center" : "flex-start",
+          alignItems: isLogin || isHome ? "center" : "flex-start",
+          padding: isLogin || isHome ? "0px" : "20px",
           flex: 1,
-          overflow: "auto",
+          overflow: isLogin|| isHome ? "hidden" : "auto",
           minHeight: 0,
         }}
       >
