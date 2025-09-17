@@ -1,9 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { Form } from "antd";
+import { Form, message } from "antd";
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [form] = Form.useForm();
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  // Datos de conexion a la API
+
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+  const LOGIN_ENDPOINT = '/api/auth/login';
 
   // Cargar los datos guardado al montar el componente
   useEffect(() =>{
@@ -19,8 +29,100 @@ function Login() {
     }
   }, [form]);
 
-  const onFinish = (values) =>{
+  // Simulación de Autenticacion mientras no tenga la API real
+
+  const simulateAuth = async (username, password) =>{
+    setLoading(true);
+
+    await new Promise(resolve =>setTimeout(resolve, 1500));
+
+    if (username === 'admin' && password === 'admin'){
+      const mockUser = {
+        id: 1,
+        username: "admin",
+        fullName: "El gran Admin",
+        email: "emailDelAdmin@superAdmin.com"
+      };
+
+      const mockToken = 'mock-jwt-token-12345';
+
+      // Usamos el contexto para hacer login
+
+      login(mockUser, mockToken);
+
+      message.success('Bienvenido, ' + mockUser.fullName + '!');
+
+      //Redirigimos al Home
+      navigate('/Home');
+
+      setLoading(false);
+      return true;
+    } else{
+      message.error('Usuario o password incorrecta (para esta versión de prueba introduce: admin/admin');
+      setLoading(false);
+      return false;
+    }
+  };
+
+  // Funcion para autenticar cuando tenga opeativo el backend
+/*
+  const authenticatedWithAPI = async(username, password) =>{
+    setLoading(true);
+
+    try{
+      const response = await fetch('${API_BASE_URL}${LOGIN_ENDPOINT}',{
+        method: 'POST',
+        headers:{
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+      });
+      if(!response.ok){
+        let errorMessage = 'Error al iniciar sesión';
+
+        if(response.status === 401){
+          errorMessage = 'Usuario o contraseña incorrectos';
+        }else if (response.status === 404){
+          errorMessage = 'EndPoint no encontrado. Verifica que la aplicacion este inicializada'
+        }else if (response.status === 500){
+          errorMessage = 'Error interno en el servidor';
+        }
+      try{
+          const errorData = await response.json();
+          if (errorData.message){
+            errorMessage = errorData.message;
+          }
+        }catch(e){}
+
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+
+      // Usamos el contexto para hacer login
+      login(data.user, data.token);
+
+      message.success('Bienvenido, ${data.user?.fullname || data.user?.username');
+      navigate('/Home');
+
+      return true;
+    }catch (error){
+      console.error('Error de autenticación:', error);
+      message.error(error.message || 'Error al iniciar sesión');
+      return false;
+    }finally{
+      setLoading(false);
+    }
+  }
+*/
+  const onFinish = async (values) =>{
     console.log("Datos enviados:", values);
+
+    // Manejamos el boton "Recuerdame"
 
     if (values.remember){
       localStorage.setItem('rememberUserName', values.username);
@@ -30,6 +132,10 @@ function Login() {
       localStorage.removeItem('rememberMe');
     }
 
+    // Usar simulateAuth, cambiar por authenticatedWithAPI cuando este el back terminado
+
+    await simulateAuth(values.username, values.password);
+    // await authenticatedWithAPI(values.usernamo, values.password);
   };
 
   const handleRememberChange = (e) =>{
