@@ -7,7 +7,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { Layout } from "antd"; // solo el componente
-import "./App.css"; // tus estilos si quieres mantenerlos
+import "./App.css";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Navbar from "./components/Navbar";
