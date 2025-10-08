@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Form, message, Modal } from "antd";
+import { Form, message} from "antd";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { loginUser } from "../services/userService";
 
 message.config({
   top: 100,
@@ -19,8 +20,8 @@ function Login() {
 
   // Datos de conexion a la API
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:";
-  const LOGIN_ENDPOINT = "/api/auth/login";
+  // const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:";
+  // const LOGIN_ENDPOINT = "/api/auth/login";
 
   // Cargar los datos guardado al montar el componente
   useEffect(() => {
@@ -38,94 +39,65 @@ function Login() {
 
   // Simulación de Autenticacion mientras no tenga la API real
 
-  const simulateAuth = async (username, password) => {
-  setLoading(true);
+//   const simulateAuth = async (username, password) => {
+//   setLoading(true);
 
-  await new Promise((resolve) => setTimeout(resolve, 1500));
+//   await new Promise((resolve) => setTimeout(resolve, 1500));
 
-  if (username === "admin" && password === "admin") {
-    const mockUser = {
-      id: 1,
-      username: "admin",
-      fullName: "El gran Admin",
-      email: "emailDelAdmin@superAdmin.com",
-    };
+//   if (username === "admin" && password === "admin") {
+//     const mockUser = {
+//       id: 1,
+//       username: "admin",
+//       fullName: "El gran Admin",
+//       email: "emailDelAdmin@superAdmin.com",
+//     };
     
-    const mockToken = "mock-jwt-token-12345";
-    login(mockUser, mockToken);
+//     const mockToken = "mock-jwt-token-12345";
+//     login(mockUser, mockToken);
 
-    navigate("/Home")
+//     navigate("/Home")
     
-    setLoading(false);
-    return true;
-  } else {
-    console.log('Credenciales incorrectas - mostrando error');
+//     setLoading(false);
+//     return true;
+//   } else {
+//     console.log('Credenciales incorrectas - mostrando error');
     
-    // Usar alert nativo para el error
-    setTimeout(() => {
-      window.alert('❌ Credenciales incorrectas\n\nPara esta versión de prueba usa:\nUsuario: admin\nContraseña: admin');
-    }, 100);
+//     // Usar alert nativo para el error
+//     setTimeout(() => {
+//       window.alert('❌ Credenciales incorrectas\n\nPara esta versión de prueba usa:\nUsuario: admin\nContraseña: admin');
+//     }, 100);
     
-    setLoading(false);
-    return false;
-  }
-};
+//     setLoading(false);
+//     return false;
+//   }
+// };
 
   // Funcion para autenticar cuando tenga opeativo el backend
-  /*
+
   const authenticatedWithAPI = async(username, password) =>{
     setLoading(true);
-
+    
     try{
-      const response = await fetch('${API_BASE_URL}${LOGIN_ENDPOINT}',{
-        method: 'POST',
-        headers:{
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          username: username,
-          password: password,
-        }),
-      });
-      if(!response.ok){
-        let errorMessage = 'Error al iniciar sesión';
+      const userData = await loginUser(username, password);
 
-        if(response.status === 401){
-          errorMessage = 'Usuario o contraseña incorrectos';
-        }else if (response.status === 404){
-          errorMessage = 'EndPoint no encontrado. Verifica que la aplicacion este inicializada'
-        }else if (response.status === 500){
-          errorMessage = 'Error interno en el servidor';
-        }
-      try{
-          const errorData = await response.json();
-          if (errorData.message){
-            errorMessage = errorData.message;
-          }
-        }catch(e){}
+      const mockToken = `token-${userData.idUser}-${Date.now()}`;
 
-        throw new Error(errorMessage);
-      }
+      login(userData, mockToken);
 
-      const data = await response.json();
-
-      // Usamos el contexto para hacer login
-      login(data.user, data.token);
-
-      message.success('Bienvenido, ${data.user?.fullname || data.user?.username');
+      message.success(`¡Bienvenido, ${userData.name}!`);
       navigate('/Home');
 
       return true;
+
     }catch (error){
-      console.error('Error de autenticación:', error);
-      message.error(error.message || 'Error al iniciar sesión');
+      console.error('Error de autenticacion:', error);
+      message.error(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
       return false;
     }finally{
       setLoading(false);
     }
   }
-*/
+
   const onFinish = async (values) => {
     console.log("Datos enviados:", values);
 
@@ -141,7 +113,7 @@ function Login() {
 
     // Usar simulateAuth, cambiar por authenticatedWithAPI cuando este el back terminado
 
-    await simulateAuth(values.username, values.password);
+    await authenticatedWithAPI(values.username, values.password);
     // await authenticatedWithAPI(values.usernamo, values.password);
   };
 
