@@ -24,26 +24,35 @@ function LayoutWrapper() {
   const { isAuthenticated } = useAuth();
 
   const isLogin = location.pathname === "/login";
+  const isRegister = location.pathname === "/register";
   const isHome = location.pathname === "/home";
+
+  // No muestro el navbar ni en el Login ni en el registro
+
+  const hideNavbar = isLogin || isRegister;
+
+  // Centro contenido en login, registro y home;
+
+  const centerContent = isLogin || isRegister || isHome;
 
   return (
     <Layout
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
     >
-      {!isLogin && (
+      {!hideNavbar && (
         <Header>
-          <Navbar showMenuItems={!isLogin} />
+          <Navbar showMenuItems={true} />
         </Header>
       )}
 
       <Content
         style={{
           display: "flex",
-          justifyContent: isLogin || isHome ? "center" : "flex-start",
-          alignItems: isLogin || isHome ? "center" : "flex-start",
-          padding: isLogin || isHome ? "0px" : "20px",
+          justifyContent: centerContent  ? "center" : "flex-start",
+          alignItems: centerContent  ? "center" : "flex-start",
+          padding: centerContent  ? "0px" : "20px",
           flex: 1,
-          overflow: isLogin|| isHome ? "hidden" : "auto",
+          overflow: centerContent ? "hidden" : "auto",
           minHeight: 0,
         }}
       >
