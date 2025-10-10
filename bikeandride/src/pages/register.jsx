@@ -404,6 +404,26 @@ function Register(){
                 </Form.Item>
 
                 <Form.Item
+                  name="email"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Por favor, introduce tu email!",
+                    },
+                    {
+                    type: "email",
+                    message:"Email no válido.",
+                    },
+                  ]}
+                >
+                  <input
+                    className="bike-input"
+                    placeholder="Email"
+                    autoComplete="email"
+                  />
+                </Form.Item>
+
+                <Form.Item
                   name="password"
                   rules={[
                     {
