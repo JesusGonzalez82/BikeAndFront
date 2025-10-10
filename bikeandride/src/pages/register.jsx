@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Form, message, DatePicker } from "antd";
 import { useNavigate } from "react-router-dom";
-import { createtUser } from "../services/userService";
+import { createUser } from "../services/userService";
 import dayjs from "dayjs";
 
 message.config({
@@ -25,7 +25,7 @@ function Register(){
                 status: "activo",
             };
 
-            await createtUser(userData);
+            await createUser(userData);
 
             message.success("¡Usuario creado con exito! Ahora puedes iniciar sesión.");
 

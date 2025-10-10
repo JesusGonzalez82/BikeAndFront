@@ -16,6 +16,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProtectedRoute, PublicRoute } from "./components/ProtectedRoute";
+import Register from "./pages/register";
 
 const { Header, Content, Footer } = Layout;
 
@@ -71,6 +72,16 @@ function LayoutWrapper() {
             element={
               <PublicRoute>
                 <Login />
+              </PublicRoute>
+            }
+          />
+
+          {/*Ruta a registro*/}
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <Register />
               </PublicRoute>
             }
           />

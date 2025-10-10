@@ -25,12 +25,12 @@ function Login() {
 
   // Cargar los datos guardado al montar el componente
   useEffect(() => {
-    const savedUserName = localStorage.getItem("rememberedUsername");
+    const savedEmail = localStorage.getItem("rememberedEmail");
     const savedRememberMe = localStorage.getItem("rememberMe") === "true";
 
-    if (savedUserName && savedRememberMe) {
+    if (savedEmail && savedRememberMe) {
       form.setFieldsValue({
-        username: savedUserName,
+        email: savedEmail,
         remember: true,
       });
       setRememberMe(true);
@@ -74,11 +74,11 @@ function Login() {
 
   // Funcion para autenticar cuando tenga opeativo el backend
 
-  const authenticatedWithAPI = async(username, password) =>{
+  const authenticatedWithAPI = async(email, password) =>{
     setLoading(true);
     
     try{
-      const userData = await loginUser(username, password);
+      const userData = await loginUser(email, password);
 
       const mockToken = `token-${userData.idUser}-${Date.now()}`;
 
@@ -104,10 +104,10 @@ function Login() {
     // Manejamos el boton "Recuerdame"
 
     if (values.remember) {
-      localStorage.setItem("rememberedUsername", values.username); // Consistente
+      localStorage.setItem("rememberedEmail", values.email); // Consistente
       localStorage.setItem("rememberMe", "true");
     } else {
-      localStorage.removeItem("rememberedUsername"); // Mismo nombre
+      localStorage.removeItem("rememberedEmail"); // Mismo nombre
       localStorage.removeItem("rememberMe");
     }
 
@@ -538,18 +538,22 @@ function Login() {
                 initialValues={{ remember: false }}
               >
                 <Form.Item
-                  name="username"
+                  name="email"
                   rules={[
                     {
                       required: true,
-                      message: "Por favor, introduce tu usuario!",
+                      message: "Por favor, introduce tu email!",
+                    },
+                    {
+                    type: "email",
+                    message:"Email no válido.",
                     },
                   ]}
                 >
                   <input
                     className="bike-input"
-                    placeholder="Usuario"
-                    autoComplete="username"
+                    placeholder="Email"
+                    autoComplete="email"
                   />
                 </Form.Item>
 
@@ -613,7 +617,7 @@ function Login() {
                 <button
                   className="link-btn register"
                   type="button"
-                  onClick={() => console.log("Register clicked")}
+                  onClick={() => navigate('/register')}
                 >
                   ¡Regístrate aquí!
                 </button>
