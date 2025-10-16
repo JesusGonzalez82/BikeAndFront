@@ -98,12 +98,12 @@ const fetchConfig = {
 
  // LOGIN - Auntenico usuario
  
- export const loginUser = async(name, password) =>{
+ export const loginUser = async(email, password) =>{
     try{
         const response = await fetch(`${API_URL}/login`,{
             method:'POST',
             ...fetchConfig,
-            body: JSON.stringify({ name, password}),
+            body: JSON.stringify({ email, password}),
         });
         if(!response.ok){
             if(response.status===401){

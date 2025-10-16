@@ -113,7 +113,7 @@ function Login() {
 
     // Usar simulateAuth, cambiar por authenticatedWithAPI cuando este el back terminado
 
-    await authenticatedWithAPI(values.username, values.password);
+    await authenticatedWithAPI(values.email, values.password);
     // await authenticatedWithAPI(values.usernamo, values.password);
   };
 

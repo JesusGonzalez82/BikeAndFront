@@ -130,3 +130,5 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+battery-report.html
+dependency-check-report.html
