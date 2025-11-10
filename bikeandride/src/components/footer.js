@@ -8,8 +8,7 @@ import {
   LinkedinFilled,
   GithubOutlined,
 } from "@ant-design/icons";
-import {Link as RouterLink} from "react-router-dom";
-
+import { Link as RouterLink } from "react-router-dom";
 
 const { Title, Text } = Typography;
 
@@ -26,6 +25,14 @@ function Footer() {
     marginRight: "16px",
     cursor: "pointer",
     transition: "color 0.3s",
+  };
+
+  const handleSocialHover = (e) => {
+    e.currentTarget.style.color = "#1890ff";
+  };
+
+  const handleSocialLeave = (e) => {
+    e.currentTarget.style.color = "rgba(255, 255, 255, 0.65)";
   };
 
   return (
@@ -117,6 +124,8 @@ function Footer() {
               onClick={() =>
                 window.open("https://github.com/JesusGonzalez82", "_blank")
               }
+              onMouseEnter={handleSocialHover}
+              onMouseLeave={handleSocialLeave}
             />
             <LinkedinFilled
               style={{
@@ -130,13 +139,20 @@ function Footer() {
                   "_blank"
                 )
               }
+              onMouseEnter={handleSocialHover}
+              onMouseLeave={handleSocialLeave}
             />
-            {/* <FacebookOutlined style={{ ...socialIconStyle, fontSize: '20px', marginRight: '12px' }} /> */}
             <InstagramOutlined
-              style={{ ...socialIconStyle, fontSize: "20px", marginRight: "0" }}
+              style={{
+                ...socialIconStyle,
+                fontSize: "20px",
+                marginRight: "0",
+              }}
               onClick={() =>
                 window.open("https://www.instagram.com/chuso1982mtb/", "_blank")
               }
+              onMouseEnter={handleSocialHover}
+              onMouseLeave={handleSocialLeave}
             />
           </div>
         </Col>
@@ -150,17 +166,32 @@ function Footer() {
       />
 
       {/* Copyright y Politicas */}
-      <Row justify="space-between" align="middle">
-        <Col>
+      <Row justify="space-between" align="middle" gutter={[0, 8]}>
+        <Col xs={24} sm={12}>
           <Text style={{ color: "rgba(255, 255, 255, 0.45)", fontSize: "14px" }}>
             Jesús González Blanco © 2025 Bike And Ride. Todos los derechos reservados.
           </Text>
         </Col>
-        <Col>
-          <RouterLink to="/privacy" style={{ color: "rgba(255, 255, 255, 0.45)", marginRight: "16px", fontSize: "14px", textDecoration: "none" }}>
+        <Col xs={24} sm={12} style={{ textAlign: "right" }}>
+          <RouterLink 
+            to="/privacy" 
+            style={{ 
+              color: "rgba(255, 255, 255, 0.45)", 
+              marginRight: "16px", 
+              fontSize: "14px", 
+              textDecoration: "none" 
+            }}
+          >
             Política de Privacidad
           </RouterLink>
-          <RouterLink to="/terms" style={{ color: "rgba(255, 255, 255, 0.45)", fontSize: "14px", textDecoration: "none" }}>
+          <RouterLink
+            to="/terms"
+            style={{
+              color: "rgba(255, 255, 255, 0.45)",
+              fontSize: "14px",
+              textDecoration: "none",
+            }}
+          >
             Términos de Uso
           </RouterLink>
         </Col>

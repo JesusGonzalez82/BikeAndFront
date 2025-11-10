@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8080"; // fallback por seguridad
+const API_URL = "https://bikeback.yustaspace.es"; 
 console.log("API_URL =", API_URL); // para verificar
 const env = { API_URL };
 export default env;

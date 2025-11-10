@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { Form, message, DatePicker } from "antd";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { createUser } from "../services/userService";
+import { formatDateForBackend } from "../utils/dateUtils";
 import dayjs from "dayjs";
+
 
 message.config({
     top: 100,
@@ -13,24 +16,30 @@ message.config({
 function Register(){
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
     const onFinish = async(values) =>{
         setLoading(true);
 
         try{
             const userData = {
                 name: values.username,
+                email: values.email,
                 password: values.password,
-                birthday: values.birthday.format("DD-MM-YYYY"),
+                birthday: formatDateForBackend(values.birthday),
                 status: "activo",
             };
 
-            await createUser(userData);
+            const newUser = await createUser(userData);
 
-            message.success("¡Usuario creado con exito! Ahora puedes iniciar sesión.");
+            message.success("¡Bienvenido! Tu cuenta ha sido creada con exito.");
+
+            const mockToken = `token-${newUser.idUser}-${Date.now()}`;
+            login(newUser, mockToken);
 
             setTimeout(() =>{
-                navigate("/login");
+                navigate("/home");
             }, 1500);
         }catch(error){
             console.error("Error al crear el usuario: ", error);
@@ -91,7 +100,7 @@ function Register(){
           display: flex;
           justify-content: center;
           align-items: center;
-          transition: 0.5s;
+          transition: width 0.5s ease, height 0.5s ease;
         }
 
         @keyframes rotating {
@@ -127,16 +136,16 @@ function Register(){
           border: 8px solid #25252b;
         }
 
-        .animated-box-register:hover {
+        .animated-box-register.expanded {
           width: 500px;
           height: 650px;
         }
 
-        .animated-box-register:hover .register-area {
+        .animated-box-register.expanded .register-area {
           inset: 40px;
         }
 
-        .animated-box-register:hover .register-content {
+        .animated-box-register.expanded .register-content {
           transform: translateY(0px);
         }
 
@@ -153,7 +162,7 @@ function Register(){
           z-index: 100;
           box-shadow: inset 0 10px 20px #00000080;
           border-bottom: 2px solid #ffffff80;
-          transition: 0.5s;
+          transition: 0.5s ease;
           overflow: hidden;
         }
 
@@ -166,7 +175,7 @@ function Register(){
           gap: 5px;
           width: 90%;
           transform: translateY(185px);
-          transition: 0.5s;
+          transition: 0.5s ease;
           padding: 10px 0;
         }
 
@@ -366,7 +375,8 @@ function Register(){
       `}</style>
 
       <div className="register-page-container">
-        <div className="animated-box-register">
+        <div className={`animated-box-register ${isExpanded ? 'expanded' : ''}`}
+        onClick={() => setIsExpanded(true)}>
           <div className="register-area">
             <div className="register-content">
               <div className="logo-section">
@@ -382,6 +392,7 @@ function Register(){
                 name="register"
                 onFinish={onFinish}
                 className="bike-form"
+                onFocus={() => setIsExpanded(true)}
               >
                 <Form.Item
                   name="username"

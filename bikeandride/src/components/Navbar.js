@@ -1,44 +1,229 @@
 import React from "react";
-import { Menu, Typography } from "antd";
-
-const { Title } = Typography;
+import { Menu, Avatar, Dropdown, Space, Modal } from "antd"; // ← Añadimos Avatar, Dropdown, Space
+import { Link, useLocation, useNavigate } from "react-router-dom"; // ← Para navegación
+import {
+  UserOutlined,
+  LogoutOutlined,
+  HomeOutlined,
+  DashboardFilled,
+  EnvironmentOutlined,
+  TrophyOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  GithubOutlined,
+  LinkedinFilled,
+  InstagramOutlined,
+} from "@ant-design/icons"; // ← Iconos
+import { useAuth } from "../context/AuthContext"; // ← Para obtener el usuario
 
 function Navbar({ showMenuItems = true }) {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isContactModalOpen, setIsContactModalOpen] = React.useState(false);
+  const isHome = location.pathname === '/home';
+
+  const userMenuItems = [
+    {
+      key: "profile",
+      icon: <UserOutlined />,
+      label: "Mi Perfil",
+      onClick: () => navigate('/profile'),
+    },
+    {
+      type: "divider",
+    },
+    {
+      key: "logout",
+      icon: <LogoutOutlined />,
+      label: "Cerrar Sesión",
+      onClick: logout,
+      danger: true,
+    },
+  ];
+
+  const showContactModal = () => {
+    setIsContactModalOpen(true);
+  };
+
+  const handleContactClose = () => {
+    setIsContactModalOpen(false);
+  }
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', width: "100%", height: "100%"}}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        width: "100%",
+        height: "100%",
+        padding: "0 24px",
+      }}
+    >
+      <Link to="/home" style={{ textDecoration: "none" }}>
+        <Space align="center">
+          <i
+            className="fa-solid fa-bicycle"
+            style={{
+              fontSize: "28px",
+              color: "#48e", // ← Mismo azul del login
+              textShadow: "0 0 10px rgba(68, 136, 238, 0.5)", // ← Brillo sutil
+            }}
+          />
+          <span
+            style={{
+              color: "white",
+              fontSize: "20px",
+              fontWeight: "bold",
+            }}
+          >
+            Bike & Ride
+          </span>
+        </Space>
+      </Link>
+
+      {showMenuItems && (
+        <Menu
+          mode="horizontal"
+          theme="dark"
+          selectedKeys={[location.pathname]} // ← Marca la página actual
+          style={{
+            flex: 1,
+            border: "none",
+            marginLeft: "50px",
+            minWidth: 0,
+          }}
+        >
+          {isHome ? (
+            <Menu.Item key="contact" icon={<MailOutlined />} onClick={showContactModal}>
+              Contacto
+            </Menu.Item>
+          ) : (
+            <>
+          <Menu.Item key="/home" icon={<HomeOutlined />}>
+            <Link to="/home">Home</Link>
+          </Menu.Item>
+
+          <Menu.Item key="/bikes" icon={<i className="fa-solid fa-bicycle" style={{ fontSize: '14px' }}></i>}>
+            <Link to="/bikes">Bicicletas</Link>
+          </Menu.Item>
+
+          <Menu.Item key="/routes" icon={<EnvironmentOutlined/>}>
+            <Link to="/routes">Rutas</Link>
+          </Menu.Item>
+
+          <Menu.Item key="/activities" icon={<TrophyOutlined />}>
+            <Link to="/activities">Actividades</Link>
+          </Menu.Item>
+
+          <Menu.Item key="contact" icon={<MailOutlined />} onClick={showContactModal}>
+            Contacto
+          </Menu.Item>
+          </>
+          )}
+        </Menu>
+      )}
+      {showMenuItems && user && (
+        <Dropdown
+          menu={{ items: userMenuItems }}
+          placement="bottomRight"
+          trigger={["click"]}
+        >
+          <Space style={{ cursor: "pointer", paddingLeft: "16px" }}>
+            <Avatar
+              style={{ backgroundColor: "#1890ff" }}
+              icon={<UserOutlined />}
+            >
+              {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+            </Avatar>
+            <span style={{ color: "#fff" }}>{user.name || "Usuario"}</span>
+          </Space>
+        </Dropdown>
+      )}
+<Modal
+  title={
+    <span style={{ fontSize: '18px', fontWeight: 'bold', textAlign: 'center',
+      display:'block'}}>
+      <MailOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
       
-      {/* Icono SIEMPRE a la izquierda */}
-      {/* <img 
-        src="/icons/icono.svg"
-        alt="BikeAndRide Logo" 
-        style={{ 
-          width: '64px', 
-          height: '64px',
-          marginRight: '0px',
-          opacity: "0.8"
-        }} 
-      /> */}
-      
-      {/* Contenedor para título y menú */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        width: '100%',
-        justifyContent: showMenuItems ? 'flex-start' : 'center',
-      }}>
-        
-        <Title level={3} style={{ color: 'white', margin: showMenuItems ? '0 24px 0 0' : '0' }}>
-          Bike And Ride
-        </Title>
-        
-        {showMenuItems && (
-          <Menu mode="horizontal" theme="dark" style={{ flex: 1, border: 'none' }}>
-            <Menu.Item key="home">Home</Menu.Item>
-            <Menu.Item key="about">About</Menu.Item>
-            <Menu.Item key="contact">Contact</Menu.Item>
-          </Menu>
-        )}
+      Contacto
+    </span>
+  }
+  open={isContactModalOpen}
+  onCancel={handleContactClose}
+  footer={null}
+  width={500}
+>
+  <div style={{ padding: '20px 0' }}>
+
+<div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
+  <MailOutlined style={{ fontSize: '20px', color: '#1890ff', marginRight: '12px' }} />
+  <div>
+    <div style={{ fontWeight: '500', marginBottom: '4px' }}>Email</div>
+    <a
+      href="mailto:jgblanco82@yahoo.es"
+      style={{ color: '#595959', textDecoration: 'none' }}
+    >
+      jgblanco82@yahoo.es
+    </a>
+  </div>
+</div>
+
+<div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
+  <PhoneOutlined style={{ fontSize: '20px', color: '#52c41a', marginRight: '12px' }} />
+  <div>
+    <div style={{ fontWeight: '500', marginBottom: '4px' }}>Teléfono</div>
+    <a
+      href="tel:+34657761163"
+      style={{ color: '#595959', textDecoration: 'none' }}
+    >
+      +34 657 76 11 63
+    </a>
+  </div>
+</div>
+
+<div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center' }}>
+  <EnvironmentOutlined style={{ fontSize: '20px', color: '#fa8c16', marginRight: '12px' }} />
+  <div>
+    <div style={{ fontWeight: '500', marginBottom: '4px' }}>Ubicación</div>
+    <a
+      href="https://www.google.com/maps?q=El+Molar ,+Madrid"
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ color: '#595959', textDecoration: 'none' }}
+    >
+      El Molar, Madrid
+    </a>
+  </div>
+</div>
+
+    {/* Redes Sociales */}
+    <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: '20px', textAlign: 'center' }}>
+    <div style={{ fontWeight: '500', marginBottom: '12px' }}>Sígueme en:</div>
+    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+        <GithubOutlined
+          style={{ fontSize: '28px', color: '#595959', cursor: 'pointer', transition: 'color 0.3s' }}
+          onClick={() => window.open("https://github.com/JesusGonzalez82", "_blank")}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#1890ff'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#595959'}
+        />
+        <LinkedinFilled
+          style={{ fontSize: '28px', color: '#595959', cursor: 'pointer', transition: 'color 0.3s' }}
+          onClick={() => window.open("https://www.linkedin.com/in/jesus-gonzalez-blanco-web/", "_blank")}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#0077b5'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#595959'}
+        />
+        <InstagramOutlined
+          style={{ fontSize: '28px', color: '#595959', cursor: 'pointer', transition: 'color 0.3s' }}
+          onClick={() => window.open("https://www.instagram.com/chuso1982mtb/", "_blank")}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#E4405F'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#595959'}
+        />
       </div>
+    </div>
+  </div>
+</Modal>
     </div>
   );
 }

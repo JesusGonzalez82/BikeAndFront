@@ -1,7 +1,6 @@
 import React, {createContext, useContext, useState, useEffect} from "react";
 
-// Utilizamos Context para compartir datos entre todos los componenetes de la app, asi no tenemos que pasar
-// props manualmente de padre a hijo.
+// Utilizamos Context para compartir datos entre todos los componenetes de la app, asi no tenemos que pasar props manualmente de padre a hijo.
 
 const AuthContext = createContext();
 
@@ -17,9 +16,7 @@ export function AuthProvider({ children }){
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
-
-
-//Verificar si hay algún usuario logeado
+    
 
 useEffect(() =>{
     const token = localStorage.getItem('authToken');

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Form, message} from "antd";
+import { Form, message } from "antd";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../services/userService";
@@ -16,7 +16,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Datos de conexion a la API
 
@@ -39,45 +39,45 @@ function Login() {
 
   // Simulación de Autenticacion mientras no tenga la API real
 
-//   const simulateAuth = async (username, password) => {
-//   setLoading(true);
+  //   const simulateAuth = async (username, password) => {
+  //   setLoading(true);
 
-//   await new Promise((resolve) => setTimeout(resolve, 1500));
+  //   await new Promise((resolve) => setTimeout(resolve, 1500));
 
-//   if (username === "admin" && password === "admin") {
-//     const mockUser = {
-//       id: 1,
-//       username: "admin",
-//       fullName: "El gran Admin",
-//       email: "emailDelAdmin@superAdmin.com",
-//     };
-    
-//     const mockToken = "mock-jwt-token-12345";
-//     login(mockUser, mockToken);
+  //   if (username === "admin" && password === "admin") {
+  //     const mockUser = {
+  //       id: 1,
+  //       username: "admin",
+  //       fullName: "El gran Admin",
+  //       email: "emailDelAdmin@superAdmin.com",
+  //     };
 
-//     navigate("/Home")
-    
-//     setLoading(false);
-//     return true;
-//   } else {
-//     console.log('Credenciales incorrectas - mostrando error');
-    
-//     // Usar alert nativo para el error
-//     setTimeout(() => {
-//       window.alert('❌ Credenciales incorrectas\n\nPara esta versión de prueba usa:\nUsuario: admin\nContraseña: admin');
-//     }, 100);
-    
-//     setLoading(false);
-//     return false;
-//   }
-// };
+  //     const mockToken = "mock-jwt-token-12345";
+  //     login(mockUser, mockToken);
+
+  //     navigate("/Home")
+
+  //     setLoading(false);
+  //     return true;
+  //   } else {
+  //     console.log('Credenciales incorrectas - mostrando error');
+
+  //     // Usar alert nativo para el error
+  //     setTimeout(() => {
+  //       window.alert('❌ Credenciales incorrectas\n\nPara esta versión de prueba usa:\nUsuario: admin\nContraseña: admin');
+  //     }, 100);
+
+  //     setLoading(false);
+  //     return false;
+  //   }
+  // };
 
   // Funcion para autenticar cuando tenga opeativo el backend
 
-  const authenticatedWithAPI = async(email, password) =>{
+  const authenticatedWithAPI = async (email, password) => {
     setLoading(true);
-    
-    try{
+
+    try {
       const userData = await loginUser(email, password);
 
       const mockToken = `token-${userData.idUser}-${Date.now()}`;
@@ -85,18 +85,19 @@ function Login() {
       login(userData, mockToken);
 
       message.success(`¡Bienvenido, ${userData.name}!`);
-      navigate('/Home');
+      navigate("/Home");
 
       return true;
-
-    }catch (error){
-      console.error('Error de autenticacion:', error);
-      message.error(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+    } catch (error) {
+      console.error("Error de autenticacion:", error);
+      message.error(
+        error.message || "Error al iniciar sesión. Verifica tus credenciales."
+      );
       return false;
-    }finally{
+    } finally {
       setLoading(false);
     }
-  }
+  };
 
   const onFinish = async (values) => {
     console.log("Datos enviados:", values);
@@ -170,7 +171,7 @@ function Login() {
           display: flex;
           justify-content: center;
           align-items: center;
-          transition: 0.5s;
+          transition: width 0.5s ease, height 0.5s ease;
         }
 
         @keyframes rotating {
@@ -206,17 +207,28 @@ function Login() {
           border: 8px solid #25252b;
         }
 
-        .animated-box:hover {
+        .animated-box.expanded {
           width: 450px;
           height: 550px;
         }
 
-        .animated-box:hover .login-area {
+        .animated-box.expanded .login-area {
           inset: 40px;
         }
 
-        .animated-box:hover .login-content {
+        .animated-box.expanded .login-content {
           transform: translateY(0px);
+        }
+
+        .animated-box:not(.expanded):hover {
+          width: 450px;
+          height: 550px;
+        }
+        .animated-box:not(.expanded):hover .login-area {
+          inset: 40px;
+        }
+        .animated-box:not(.expanded):hover .login-content {
+          transform: translateY(0);
         }
 
         .login-area {
@@ -232,7 +244,7 @@ function Login() {
           z-index: 100;
           box-shadow: inset 0 10px 20px #00000080;
           border-bottom: 2px solid #ffffff80;
-          transition: 0.5s;
+          transition: inset 0.5s ease;
           overflow: hidden;
         }
 
@@ -245,7 +257,7 @@ function Login() {
           gap: 5px;
           width: 90%;
           transform: translateY(126px);
-          transition: 0.5s;
+          transition: transform 0.5s ease;
         }
 
         .logo-section {
@@ -513,7 +525,7 @@ function Login() {
       `}</style>
 
       <div className="login-page-container">
-        <div className="animated-box">
+        <div className={`animated-box ${isExpanded ? "expanded" : ""}`}>
           <div className="login-area">
             <div className="login-content">
               {/* Sección del logo */}
@@ -536,6 +548,7 @@ function Login() {
                 onFinish={onFinish}
                 className="bike-form"
                 initialValues={{ remember: false }}
+                onFocus={() => setIsExpanded(true)}
               >
                 <Form.Item
                   name="email"
@@ -545,8 +558,8 @@ function Login() {
                       message: "Por favor, introduce tu email!",
                     },
                     {
-                    type: "email",
-                    message:"Email no válido.",
+                      type: "email",
+                      message: "Email no válido.",
                     },
                   ]}
                 >
@@ -617,7 +630,7 @@ function Login() {
                 <button
                   className="link-btn register"
                   type="button"
-                  onClick={() => navigate('/register')}
+                  onClick={() => navigate("/register")}
                 >
                   ¡Regístrate aquí!
                 </button>
