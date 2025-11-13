@@ -73,3 +73,14 @@ export const calculateAge = (birthDate) => {
     if (!birthDate) return null;;
     return dayjs().diff(dayjs(birthDate), 'year');
 };
+
+/**
+ * Formatea un objeto Day.js a formato de tiempo HH:mm:ss
+ * @param {Object} timeObj - Objeto Day.js
+ * @returns {string} Tiempo en formato "HH:mm:ss"
+ */
+export const formatTimeForBackend = (timeObj) => {
+  if (!timeObj) return null;
+  if (typeof timeObj === 'string') return timeObj;
+  return dayjs(timeObj).format('HH:mm:ss');
+};

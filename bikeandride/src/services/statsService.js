@@ -17,21 +17,28 @@ export const getUserStats = async () => {
     }
 
     try{
-        const [bikesResponse, routesResponse] = await Promise.all([
+        const [bikesResponse, routesResponse, activitiesResponse] = await Promise.all([
             fetch(`${API_BASE}/bikes/getListBikeByUserId/${userId}`),
-            fetch(`${API_BASE}/rutas/all`)
+            fetch(`${API_BASE}/rutas/all`),
+            fetch(`${API_BASE}/actividades/usuario/${userId}`)
         ]);
 
         const bikes = await bikesResponse.json();
         const routes = await routesResponse.json();
+        const activities = await activitiesResponse.json();
+
+        const totalKm = activities.reduce((sum, activity) =>{
+            return sum + (parseFloat(activity.distancia) || 0);
+        }, 0);
 
         return {
             totalBikes: bikes.length,
-            totalRoutes: routes.length, // Dejamos a 0 hasta que tengamos la pagina operativa
-            totalActivities: 0, // Dejamos a 0 hasta que tengamos la pagina operativa
-            totalKm: 0, // Dejamos a 0 hasta que tengamos la pagina operativa
+            totalRoutes: routes.length, 
+            totalActivities: activities.length, 
+            totalKm: parseFloat(totalKm.toFixed(1)),
             bikes,
-            routes
+            routes,
+            activities
         };
     } catch (error) {
         console.error("Error al obtener las estadisticas del usuario: ", error);
