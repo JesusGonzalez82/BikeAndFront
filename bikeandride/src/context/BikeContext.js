@@ -24,7 +24,11 @@ export function BikeProvider({ children }) {
     const loadBikes = async () => {
         try{
             setLoading(true);
-            const data = await getBikes();
+    
+        const [data] = await Promise.all([
+        getBikes(),
+        new Promise(resolve => setTimeout(resolve, 500))
+        ]);
 
             const mappedBikes = data.map(bike => ({
                 id_bici: bike.idBike,

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 import { getUserStats } from "../services/statsService";
+import { message } from "antd";
 
 const StatsContext = createContext();
 
@@ -20,17 +21,23 @@ export function StatsProvider({ children}) {
     });
     const [loading, setLoading] = useState(false);
     
-    const loadStats = async () => {
-        try {
-            setLoading(true);
-            const data = await getUserStats();
-            setStats(data);
-        }catch (error) {
-            console.error("Error al cargar las estadisticas: ", error);
-        }finally {
-            setLoading(false);
-        }
-    };
+const loadStats = async () => {
+  try {
+    setLoading(true);
+    
+    const [data] = await Promise.all([
+      getUserStats(),
+      new Promise(resolve => setTimeout(resolve, 500))
+    ]);
+    
+    setStats(data);
+  } catch (error) {
+    console.error("Error al cargar las estadísticas:", error);
+    message.error("Error al cargar las estadísticas");
+  } finally {
+    setLoading(false);
+  }
+};
 
     const value = {
         stats,

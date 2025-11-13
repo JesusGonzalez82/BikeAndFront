@@ -25,16 +25,20 @@ export function RouteProvider({ children}) {
     const loadRoutes = async () => {
         try {
             setLoading(true);
-            const data = await getRoutes();
+            
+            const [data] = await Promise.all([
+            getRoutes(),
+            new Promise(resolve => setTimeout(resolve, 500))
+            ]);
+            
             setRoutes(data);
-        }catch (error) {
-            console.error("Error al cargar las rutas: ", error);
+        } catch (error) {
+            console.error("Error al cargar las rutas:", error);
             message.error("Error al cargar las rutas");
-        }finally {
+        } finally {
             setLoading(false);
         }
     };
-
     // Creamos una nueva ruta
     const addRoute = async (routeData) => {
         try{

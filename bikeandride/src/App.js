@@ -19,6 +19,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { BikeProvider } from "./context/BikeContext";
 import { StatsProvider } from "./context/StatsContext";
 import { RouteProvider } from "./context/RouteContext";
+import { ActivityProvider } from "./context/ActivityContext";
 import { ProtectedRoute, PublicRoute } from "./components/ProtectedRoute";
 import Register from "./pages/register";
 import Bikes from "./pages/Bikes";
@@ -169,13 +170,15 @@ function App() {
   return (
     <AuthProvider>
       <BikeProvider>
-        <StatsProvider>
-          <RouteProvider>
+        <RouteProvider>
+          <ActivityProvider>
+            <StatsProvider>
         <Router>
           <LayoutWrapper />
         </Router>
-          </RouteProvider>
-        </StatsProvider>
+            </StatsProvider>
+          </ActivityProvider>
+        </RouteProvider>
       </BikeProvider>
     </AuthProvider>
   );
