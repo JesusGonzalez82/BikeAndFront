@@ -3,23 +3,23 @@ import { CartesianGrid, Line, LineChart, XAxis, ReferenceLine } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart";
 import { Badge } from "../ui/badge";
-import  { TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { useStats } from "../context/StatsContext";
 import dayjs from "dayjs";
 import { Spin } from "antd";
 
 const chartConfig = {
-    speed: {
-        label: "Velocidad",
-        color: "hsl(var(--chart-1))",
+    elevation: {
+        label: "Desnivel",
+        color: "hsl(var(--chart-4))",
     },
 };
 
-export function SpeedChartGlow(){
-    const { stats, loading} = useStats();
+export function ElevationChartGlow(){
+    const { stats, loading } = useStats();
 
     const processActivitiesByMonth = () => {
-        if (!stats.activities || stats.activities === 0){
+        if(!stats.activities || stats.activities.length === 0 || !stats.routes) {
             return [];
         }
 
@@ -32,47 +32,52 @@ export function SpeedChartGlow(){
         ];
 
         monthNames.forEach((month, index) => {
-            monthsData[index] = { month, speed: 0, count: 0};
+            monthsData[index] = {month, elevation: 0};
         });
 
+        // Obtenemos el desnivel de las rutas realizadas
         stats.activities.forEach(activity => {
             const activityDate = dayjs(activity.fecha);
 
-            if (activityDate.year() === currentYear){
+            if (activityDate.year() === currentYear && activity.idRuta) {
                 const monthIndex = activityDate.month();
-                const speed = parseFloat(activity.velocidadMedia) || 0 ;
-                monthsData[monthIndex].speed += speed;
-                monthsData[monthIndex].count += 1;
+
+                // Localizamos la ruta correspondiente
+                const route = stats.routes.find(r => r.idRuta === activity.idRuta);
+                if (route && route.desnivel) {
+                    monthsData[monthIndex].elevation +=(route.desnivel);
+                }
             }
         });
 
         return Object.values(monthsData).map(month => ({
             month: month.month,
-            speed: month.count > 0 ? parseFloat((month.speed / month.count).toFixed(2)) : 0
+            elevation: month.elevation
         }));
     };
 
     const chartData = processActivitiesByMonth();
 
     const calculateTrend = () => {
-        const monthsWithData = chartData.filter(m => m.speed > 0);
+        const monthsWithData = chartData.filter(m => m.elevation > 0);
 
-        if (monthsWithData.length < 2) {
+        if (monthsWithData.length < 2){
             return 0;
         }
 
-        const lastMonth = monthsWithData[monthsWithData.length -1].speed;
-        const previousMonth = monthsWithData[monthsWithData.length -2].speed;
+        const lastMonth = monthsWithData[monthsWithData.length - 1].elevation;
+        const previousMonth = monthsWithData[monthsWithData.length - 2].elevation;
 
         if (previousMonth === 0) return 0;
 
-        return (((lastMonth - previousMonth) / previousMonth) * 100).toFixed(2);
+        return (((lastMonth - previousMonth) / previousMonth) * 100).toFixed(0);
     };
 
     const trend = calculateTrend();
-    const avgSpeed = chartData.reduce((sum, m) => sum + m.speed, 0) / chartData.filter(m => m.speed > 0).length || 0;
+    const totalElevation = chartData.reduce((sum, month) => sum + month.elevation, 0);
+    const avgElevation = totalElevation / 12;
 
-    if (loading) {
+    if (loading){
         return (
             <Card>
                 <CardContent>
@@ -83,10 +88,10 @@ export function SpeedChartGlow(){
                         alignItems: "center",
                         justifyContent:"center",
                         flexDirection: "column",
-                        gap: "16px"
+                        gap:"16px"
                     }}>
-                        <Spin size= "large" />
-                        <div style={{ color: "#8c8c8c" }}>Cargando Estadisticas ...</div>
+                        <Spin size="large" />
+                        <div style={{ color: "#8c8c8c" }}>Cargando estadísticas...</div>
                     </div>
                 </CardContent>
             </Card>
@@ -94,25 +99,25 @@ export function SpeedChartGlow(){
     }
 
     return (
-        <Card style={{ border: "none"}}>
+        <Card style={{ marginBottom: "32px", border: "none", maxWidth:"100%", overflow: "hidden"}}>
             <CardHeader>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap:"12px"}}>
                     <div>
                         <CardTitle className="flex items-center gap-2">
-                            ⚡ Velocidad Promedio
-                            {trend !== 0 && (
-                                <Badge
-                                    variant="outline"
-                                    className={`${
-                                        trend >= 0
-                                        ? 'text-green-500 bg-green-500/10'
-                                        : 'text-red-500 bg-red-500/10'
-                                    } border-none ml-2`}
-                                >
-                                    <TrendingUp className="h-4 w-4 mr-1" />
-                                    <span>{trend >= 0 ? '+' : ''}{trend}%</span>
-                                </Badge>
-                            )}
+                           ⛰️ Desnivel Acumulado
+                           {trend !== 0 && (
+                            <Badge
+                                variant="outline"
+                                className={`${
+                                    trend >= 0
+                                    ? 'text-green-500 bg-green-500/10'
+                                    : 'text-red-500 bg-red-500/10'
+                                } border-none ml-2`}
+                            >
+                                <TrendingUp className="h-4 w-4 mr-1" />
+                                <span>{trend >= 0 ? '+' : ''}{trend}%</span>
+                            </Badge>
+                           )}
                         </CardTitle>
                         <CardDescription>Enero - Diciembre {new Date().getFullYear()}</CardDescription>
                     </div>
@@ -120,25 +125,26 @@ export function SpeedChartGlow(){
                     <div style={{
                         textAlign: "right",
                         padding: "8px 16px",
-                        backgroundColor: "#fff8ed",
+                        backgroundColor: "#fefce8",
                         borderRadius: "8px",
-                        border: "1px solid #fed7aa"
+                        border: "1px solid #fde047",
+                        minWidth:"fit-container"
                     }}>
-                        <div style={{ fontSize: "12px", color: "#ea580c", fontWeight: "500"}}>
-                            Promedio {new Date().getFullYear()}
+                        <div style={{ fontSize: "12px", color:"#ca8a04", fontWeight:"500px"}}>
+                            Desnivel Acumulad {new Date().getFullYear()}
                         </div>
-                        <div style={{ fontSize: "24px", fontWeight: "bold", color: "#c2410c"}}>
-                            {avgSpeed.toFixed(2)} km/h
+                        <div style={{ fontSize: "24px", fontWeight: "bold", color:"#a16207" }}>
+                            {totalElevation.toLocaleString()} m
                         </div>
                     </div>
                 </div>
             </CardHeader>
-
+            
             <CardContent>
-                <div style={{ width: "100%", height:"300px"}}>
-                    {chartData.length > 0 && chartData.some(d => d.speed > 0) ? (
+                <div style={{ width: "100%", height:"300px", minHeight:"250px", position:"relative" }}>
+                    {chartData.length > 0 && chartData.some(d => d.elevation > 0) ? (
                         <>
-                            <ChartContainer config={chartConfig}>
+                            <ChartContainer config={chartConfig} style={{ width: "100%", height: "100%"}}>
                                 <LineChart
                                     width={800}
                                     height={250}
@@ -158,40 +164,40 @@ export function SpeedChartGlow(){
                                         axisLine={false}
                                         tickMargin={8}
                                         tick={{ fill: "#6b7280", fontSize: 12}}
-                                        tickFormatter={(value) => value.slice(0,3)}
+                                        tickFormatter={(value) => value.slice(0, 3)}
                                     />
 
                                     <ChartTooltip
                                         cursor={false}
                                         content={<ChartTooltipContent hideLabel />}
                                     />
-
+                                    
                                     <ReferenceLine
-                                        y={avgSpeed}
-                                        stroke="#fb923c"
+                                        y={avgElevation}
+                                        stroke="#facc15"
                                         strokeWidth={2}
                                         strokeDasharray="5 5"
                                         label={{
-                                            value: `Promedio: ${avgSpeed.toFixed(2)} km/h`,
+                                            value:`Promedio: ${avgElevation.toFixed(0)} m`,
                                             position: "insideTopRight",
-                                            fill: "#ea580c",
+                                            fill: "#ca8a04",
                                             fontSize: 12
                                         }}
                                     />
 
                                     <Line
-                                        dataKey="speed"
+                                        dataKey="elevation"
                                         type="monotone"
-                                        stroke="#f97316"
+                                        stroke="#eab308"
                                         strokeWidth={3}
-                                        dot={{ fill: "#f97316", r: 4 }}
-                                        activeDot={{ r: 6}}
-                                        filter="url(#glow-speed)"
+                                        dot={{ fill: "#eab308", r: 4}}
+                                        activeDot={{ r:6 }}
+                                        filter="url(#glow-elevation)"
                                     />
 
                                     <defs>
                                         <filter
-                                            id="glow-speed"
+                                            id="glow-elevation"
                                             x="-20%"
                                             y="-20%"
                                             width="140%"
@@ -207,32 +213,33 @@ export function SpeedChartGlow(){
                             <div style={{
                                 display: "flex",
                                 justifyContent: "center",
-                                alignItems: "center",
+                                alignContent: "center",
                                 marginTop: "16px",
                                 gap: "24px",
                                 flexWrap: "wrap"
                             }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "8px"}}>
-                                    <div style={{
-                                        width: "32px",
-                                        height: "3px",
-                                        backgroundColor: "#f97316",
-                                        borderRadius: "2px",
-                                        boxShadow: "0 0 8px rgba(249, 115, 22, 0.4)"
-                                    }}></div>
-                                    <span style={{ fontSize: "14px", color:"#6b7280"}}>Velocidad promedio</span>
-                                </div>
                                 <div style={{ display: "flex", alignItems: "center", gap:"8px"}}>
                                     <div style={{
                                         width: "32px",
-                                        height: "2px",
-                                        backgroundColor: "#fb923c",
+                                        height: "3px",
+                                        backgroundColor: "#eab308",
                                         borderRadius: "2px",
-                                        backgroundImage: "linear-gradient(to right, #fb923c 50%, transparent 50%)",
+                                        boxShadow: "0 0 8px rgba(234, 179, 8, 0.4)"
+                                    }}></div>
+                                    <span style={{ fontSize: "14px", color:"#6b7280"}}>Desnivel Acumulado</span>
+                                </div>
+
+                                <div style={{ display: "flex", alignItems:"center", gap:"8px"}}>
+                                    <div style={{
+                                        width: "32px",
+                                        height: "2px",
+                                        backgroundColor: "#facc15",
+                                        borderRadius: "2px",
+                                        backgroundImage: "linear-gradient(to right, #facc15 50%, transparent 50%)",
                                         backgroundSize: "10px 2px"
                                     }}></div>
-                                    <span style={{ fontSize: "14px", color:"#6b7280"}}>
-                                        Promedio General ({avgSpeed.toFixed(2)} km/h)
+                                    <span style={{ fontSize: "14px", color:"#6b7280" }}>
+                                        Promedio mensual ({avgElevation.toFixed(0)} m)
                                     </span>
                                 </div>
                             </div>
@@ -245,9 +252,9 @@ export function SpeedChartGlow(){
                             height: "100%",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center"
+                            justifyContent:"center"
                         }}>
-                            No hay actividades registradas este año
+                            No hay actividades con rutas registradas este año
                         </div>
                     )}
                 </div>
@@ -255,5 +262,3 @@ export function SpeedChartGlow(){
         </Card>
     );
 }
-
-

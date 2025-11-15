@@ -59,14 +59,24 @@ function LayoutWrapper() {
       <Content
         style={{
           display: "flex",
-          justifyContent: centerContent  ? "center" : "flex-start",
-          alignItems: centerContent  ? "center" : "flex-start",
-          padding: centerContent  ? "0px" : "20px",
+          justifyContent: centerContent ? "center" : "flex-start",
+          alignItems: centerContent ? "center" : "flex-start",
+          padding: centerContent ? "0px" : "20px",
           flex: 1,
           overflow: centerContent ? "hidden" : "auto",
           minHeight: 0,
+          width: "100%",
+          maxWidth: "100vw",
+          boxSizing: "border-box",
         }}
       >
+        <div style={{
+          width: "100%",
+          maxWidth: centerContent ? "none" : "1400px",
+          margin: centerContent ? "0" : "0 auto",
+          padding: centerContent ? "0" : "0 16px",
+          boxSizing: "border-box",
+        }}>
         {/*Ruta por defecto*/}
         <Routes>
           <Route
@@ -148,6 +158,7 @@ function LayoutWrapper() {
           {/*Ruta 404 */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </div>
       </Content>
 
       {/* Footer - Se muestra excepto en Home

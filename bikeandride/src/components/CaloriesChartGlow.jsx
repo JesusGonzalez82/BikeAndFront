@@ -3,23 +3,23 @@ import { CartesianGrid, Line, LineChart, XAxis, ReferenceLine } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart";
 import { Badge } from "../ui/badge";
-import  { TrendingUp } from "lucide-react";
-import { useStats } from "../context/StatsContext";
+import { TrendingUp } from "lucide-react";
 import dayjs from "dayjs";
 import { Spin } from "antd";
+import { useStats } from "../context/StatsContext";
 
 const chartConfig = {
-    speed: {
-        label: "Velocidad",
-        color: "hsl(var(--chart-1))",
+    calories: {
+        label: "Calorias",
+        color: "hsl(var(--chart-3))",
     },
 };
 
-export function SpeedChartGlow(){
-    const { stats, loading} = useStats();
+export function CaloriesChartGlow() {
+    const { stats, loading } = useStats();
 
     const processActivitiesByMonth = () => {
-        if (!stats.activities || stats.activities === 0){
+        if (!stats.activities || stats.activities.length === 0) {
             return [];
         }
 
@@ -32,7 +32,7 @@ export function SpeedChartGlow(){
         ];
 
         monthNames.forEach((month, index) => {
-            monthsData[index] = { month, speed: 0, count: 0};
+            monthsData[index] = {month, calories: 0};
         });
 
         stats.activities.forEach(activity => {
@@ -40,37 +40,37 @@ export function SpeedChartGlow(){
 
             if (activityDate.year() === currentYear){
                 const monthIndex = activityDate.month();
-                const speed = parseFloat(activity.velocidadMedia) || 0 ;
-                monthsData[monthIndex].speed += speed;
-                monthsData[monthIndex].count += 1;
+                const calories = parseFloat(activity.calorias) || 0;
+                monthsData[monthIndex].calories += calories;
             }
         });
 
         return Object.values(monthsData).map(month => ({
             month: month.month,
-            speed: month.count > 0 ? parseFloat((month.speed / month.count).toFixed(2)) : 0
+            calories: parseFloat(month.calories.toFixed(0))
         }));
     };
 
     const chartData = processActivitiesByMonth();
 
-    const calculateTrend = () => {
-        const monthsWithData = chartData.filter(m => m.speed > 0);
+    const calculateTrend = () =>{
+        const monthsWithData = chartData.filter(m => m.calories > 0);
 
-        if (monthsWithData.length < 2) {
+        if (monthsWithData.length < 2){
             return 0;
         }
 
-        const lastMonth = monthsWithData[monthsWithData.length -1].speed;
-        const previousMonth = monthsWithData[monthsWithData.length -2].speed;
+        const lastMonth = monthsWithData[monthsWithData.length -1].calories;
+        const previousMonth = monthsWithData[monthsWithData.length -2].calories;
 
         if (previousMonth === 0) return 0;
 
-        return (((lastMonth - previousMonth) / previousMonth) * 100).toFixed(2);
+        return (((lastMonth - previousMonth) / previousMonth) * 100).toFixed(0);
     };
 
     const trend = calculateTrend();
-    const avgSpeed = chartData.reduce((sum, m) => sum + m.speed, 0) / chartData.filter(m => m.speed > 0).length || 0;
+    const totalCalories = chartData.reduce((sum, month) => sum + month.calories, 0);
+    const avgCalories = totalCalories / 12;
 
     if (loading) {
         return (
@@ -81,12 +81,12 @@ export function SpeedChartGlow(){
                         padding: "100px 50px",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent:"center",
+                        justifyContent: "center",
                         flexDirection: "column",
                         gap: "16px"
                     }}>
-                        <Spin size= "large" />
-                        <div style={{ color: "#8c8c8c" }}>Cargando Estadisticas ...</div>
+                        <Spin size="large" />
+                        <div style={{ color:"#8c8c8c"}}>Cargando estadísticas...</div>
                     </div>
                 </CardContent>
             </Card>
@@ -96,10 +96,10 @@ export function SpeedChartGlow(){
     return (
         <Card style={{ border: "none"}}>
             <CardHeader>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
                     <div>
                         <CardTitle className="flex items-center gap-2">
-                            ⚡ Velocidad Promedio
+                            🔥 Calorías Quemadas
                             {trend !== 0 && (
                                 <Badge
                                     variant="outline"
@@ -120,23 +120,23 @@ export function SpeedChartGlow(){
                     <div style={{
                         textAlign: "right",
                         padding: "8px 16px",
-                        backgroundColor: "#fff8ed",
+                        backgroundColor:"#fef2f2",
                         borderRadius: "8px",
-                        border: "1px solid #fed7aa"
+                        border: "1px solid #fecaca"
                     }}>
-                        <div style={{ fontSize: "12px", color: "#ea580c", fontWeight: "500"}}>
-                            Promedio {new Date().getFullYear()}
+                        <div style={{ fontSize: "12px", color: "#dc2626", fontWeight: "500px"}}>
+                            Total {new Date().getFullYear()}
                         </div>
-                        <div style={{ fontSize: "24px", fontWeight: "bold", color: "#c2410c"}}>
-                            {avgSpeed.toFixed(2)} km/h
+                        <div style={{ fontSize: "24px", fontWeight: "bold", color: "#b91c1c"}}>
+                            {totalCalories.toFixed(0)} kcal
                         </div>
                     </div>
                 </div>
             </CardHeader>
 
             <CardContent>
-                <div style={{ width: "100%", height:"300px"}}>
-                    {chartData.length > 0 && chartData.some(d => d.speed > 0) ? (
+                <div style={{ width: "100%", height: "300px" }}>
+                    {chartData.length > 0 && chartData.some(d => d.calories > 0) ? (
                         <>
                             <ChartContainer config={chartConfig}>
                                 <LineChart
@@ -144,7 +144,7 @@ export function SpeedChartGlow(){
                                     height={250}
                                     data={chartData}
                                     margin={{
-                                        left: 12,
+                                        left:12,
                                         right: 12,
                                         top: 20,
                                         bottom: 20
@@ -153,12 +153,12 @@ export function SpeedChartGlow(){
                                     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e5e7eb" />
 
                                     <XAxis
-                                        dataKey="month"
+                                        dataKey="month"  // ← dataKey con K mayúscula
                                         tickLine={false}
                                         axisLine={false}
-                                        tickMargin={8}
-                                        tick={{ fill: "#6b7280", fontSize: 12}}
-                                        tickFormatter={(value) => value.slice(0,3)}
+                                        tickMargin={8}  // ← tickMargin es número
+                                        tick={{ fill:"#6b7280", fontSize: 12}}  // ← tick es objeto separado
+                                        tickFormatter={(value) => value.slice(0, 3)}
                                     />
 
                                     <ChartTooltip
@@ -167,36 +167,30 @@ export function SpeedChartGlow(){
                                     />
 
                                     <ReferenceLine
-                                        y={avgSpeed}
-                                        stroke="#fb923c"
+                                        y={avgCalories}
+                                        stroke="#f87171"
                                         strokeWidth={2}
                                         strokeDasharray="5 5"
                                         label={{
-                                            value: `Promedio: ${avgSpeed.toFixed(2)} km/h`,
+                                            value: `Promedio: ${avgCalories.toFixed(0)} kcal`,
                                             position: "insideTopRight",
-                                            fill: "#ea580c",
+                                            fill: "#dc2626",
                                             fontSize: 12
                                         }}
                                     />
 
                                     <Line
-                                        dataKey="speed"
+                                        dataKey="calories"
                                         type="monotone"
-                                        stroke="#f97316"
+                                        stroke="#ef4444"
                                         strokeWidth={3}
-                                        dot={{ fill: "#f97316", r: 4 }}
-                                        activeDot={{ r: 6}}
-                                        filter="url(#glow-speed)"
+                                        dot={{ fill: "#ef4444", r:4 }}
+                                        activeDot={{ r:6}}
+                                        filter="url(#glow-calories)"
                                     />
 
                                     <defs>
-                                        <filter
-                                            id="glow-speed"
-                                            x="-20%"
-                                            y="-20%"
-                                            width="140%"
-                                            height="140%"
-                                        >
+                                        <filter id="glow-calories" x="-20%" y="-20%" width="140%" height="140%">
                                             <feGaussianBlur stdDeviation="8" result="blur" />
                                             <feComposite in="SourceGraphic" in2="blur" operator="over" />
                                         </filter>
@@ -214,25 +208,26 @@ export function SpeedChartGlow(){
                             }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px"}}>
                                     <div style={{
-                                        width: "32px",
-                                        height: "3px",
-                                        backgroundColor: "#f97316",
+                                        width:"32px",
+                                        height:"3px",
+                                        backgroundColor: "#ef4444",
                                         borderRadius: "2px",
-                                        boxShadow: "0 0 8px rgba(249, 115, 22, 0.4)"
+                                        boxShadow: "0 0 8px rgba(239, 68, 68, 0.4)"
                                     }}></div>
-                                    <span style={{ fontSize: "14px", color:"#6b7280"}}>Velocidad promedio</span>
+                                    <span style={{ fontSize: "14px", color:"#6b7280"}}>Calorias quemadas</span>
                                 </div>
-                                <div style={{ display: "flex", alignItems: "center", gap:"8px"}}>
+
+                                <div style={{ display: "flex", alignItems: "center", gap: "8px"}}>
                                     <div style={{
                                         width: "32px",
                                         height: "2px",
-                                        backgroundColor: "#fb923c",
+                                        backgroundColor: "#f87171" ,
                                         borderRadius: "2px",
-                                        backgroundImage: "linear-gradient(to right, #fb923c 50%, transparent 50%)",
+                                        backgroundImage: "linear-gradient(to right, #b87171 50%, transparent 50%)",
                                         backgroundSize: "10px 2px"
                                     }}></div>
-                                    <span style={{ fontSize: "14px", color:"#6b7280"}}>
-                                        Promedio General ({avgSpeed.toFixed(2)} km/h)
+                                    <span style={{ fontSize: "14px", color: "#6b7280"}}>
+                                        Promedio mensual ({avgCalories.toFixed(0)} kcal)
                                     </span>
                                 </div>
                             </div>
@@ -241,13 +236,13 @@ export function SpeedChartGlow(){
                         <div style={{
                             textAlign: "center",
                             padding: "50px",
-                            color: "#8c8c8c",
-                            height: "100%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center"
+                            color:"#8c8c8c",
+                            height:"100%",
+                            display:"flex",
+                            alignItems:"center",
+                            justifyContent:"center"
                         }}>
-                            No hay actividades registradas este año
+                            No hay Actividades con calorias registradas este año
                         </div>
                     )}
                 </div>
@@ -255,5 +250,3 @@ export function SpeedChartGlow(){
         </Card>
     );
 }
-
-

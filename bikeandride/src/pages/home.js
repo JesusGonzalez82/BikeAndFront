@@ -25,7 +25,7 @@ import {
 import dayjs from "dayjs";
 import { useAuth } from "../context/AuthContext";
 import { useStats } from "../context/StatsContext";
-import { KilometersChartGlow } from "../components/KilometersChartGlow";
+import { ChartsCarousel } from "../components/ChartsCarousel"
 
 const { Title, Text } = Typography;
 
@@ -220,7 +220,7 @@ function Home() {
           </Card>
 
           {/* Gráfico de Kilómetros */}
-          <KilometersChartGlow />
+          <ChartsCarousel />
 
           {/* Últimas Actividades */}
           <Card
