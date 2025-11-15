@@ -7,7 +7,7 @@ import { ElevationChartGlow } from "./ElevationChartGlow";
 
 export function ChartsCarousel(){
     return (
-        <div style={{ marginBottom: "32px", width: "100%", overflow: "hidden" }}>
+        <div style={{ marginBottom: "32px", width: "100%"}}>
             <style>
                 {`
                     .ant-carousel .slick-dots {

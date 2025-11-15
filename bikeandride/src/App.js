@@ -6,12 +6,11 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { Layout } from "antd"; // solo el componente
+import { Layout } from "antd";
 import "./App.css";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Navbar from "./components/Navbar";
-//import CustomFooter from "./components/footer";
 import FooterMinimal from "./components/footerMinimal";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
@@ -27,7 +26,6 @@ import RoutesPage from "./pages/Routes";
 import Activities from "./pages/Activities";
 import Profile from "./pages/Profile";
 
-
 const { Header, Content, Footer } = Layout;
 
 function LayoutWrapper() {
@@ -36,14 +34,8 @@ function LayoutWrapper() {
 
   const isLogin = location.pathname === "/login";
   const isRegister = location.pathname === "/register";
-  //const isHome = location.pathname === "/home";
-
-  // No muestro el navbar ni en el Login ni en el registro
 
   const hideNavbar = isLogin || isRegister;
-
-  // Centro contenido en login, registro y home;
-
   const centerContent = isLogin || isRegister;
 
   return (
@@ -65,19 +57,8 @@ function LayoutWrapper() {
           flex: 1,
           overflow: centerContent ? "hidden" : "auto",
           minHeight: 0,
-          width: "100%",
-          maxWidth: "100vw",
-          boxSizing: "border-box",
         }}
       >
-        <div style={{
-          width: "100%",
-          maxWidth: centerContent ? "none" : "1400px",
-          margin: centerContent ? "0" : "0 auto",
-          padding: centerContent ? "0" : "0 16px",
-          boxSizing: "border-box",
-        }}>
-        {/*Ruta por defecto*/}
         <Routes>
           <Route
             path="/"
@@ -86,7 +67,6 @@ function LayoutWrapper() {
             }
           />
 
-          {/*Ruta Pública*/}
           <Route
             path="/login"
             element={
@@ -96,7 +76,6 @@ function LayoutWrapper() {
             }
           />
 
-          {/*Ruta a registro*/}
           <Route
             path="/register"
             element={
@@ -109,7 +88,6 @@ function LayoutWrapper() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfUse />} />
 
-          {/* Ruta Protegida */}
           <Route
             path="/home"
             element={
@@ -127,7 +105,7 @@ function LayoutWrapper() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/routes"
             element={
@@ -155,21 +133,12 @@ function LayoutWrapper() {
             }
           />
 
-          {/*Ruta 404 */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        </div>
       </Content>
 
-      {/* Footer - Se muestra excepto en Home
-      {(!isLogin || !isRegister) && (
-        <Footer style={{ padding: 0, marginTop: "auto" }}>
-          <CustomFooter />
-        </Footer>
-      )} */}
-
       {(!isLogin && !isRegister) && (
-        <Footer style={{ padding: 0, marginTop: "auto"}}>
+        <Footer style={{ padding: 0, marginTop: "auto" }}>
           <FooterMinimal />
         </Footer>
       )}
@@ -184,9 +153,9 @@ function App() {
         <RouteProvider>
           <ActivityProvider>
             <StatsProvider>
-        <Router>
-          <LayoutWrapper />
-        </Router>
+              <Router>
+                <LayoutWrapper />
+              </Router>
             </StatsProvider>
           </ActivityProvider>
         </RouteProvider>

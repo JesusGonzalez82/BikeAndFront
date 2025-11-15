@@ -40,6 +40,32 @@ html, body, #root {
   overflow: visible !important;
 }
 
+.chart-wrapper {
+  width: 100% !important;
+  height: 300px !important;
+  min-height: 300px !important;
+  display: block !important;
+  position: relative !important;
+}
+
+/* El contenedor interno que crea Recharts */
+.chart-wrapper .recharts-responsive-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* El SVG real */
+.chart-wrapper .recharts-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* OVERRIDE al CSS de Ant Design que está rompiendo el layout */
+.ant-card-body {
+  overflow: visible !important;
+  height: auto !important;
+}
+
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .ant-layout-content {
