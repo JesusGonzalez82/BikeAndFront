@@ -28,6 +28,12 @@ import {
     FireOutlined,
     ThunderboltOutlined,
  } from "@ant-design/icons";
+ import {
+  getActivities,
+  createActivity,
+  deleteActivity,
+  updateActivity,
+} from "../services/activityServices";
  import { useActivities } from "../context/ActivityContext";
  import { useBikes } from "../context/BikeContext";
  import { useRoutes } from "../context/RouteContext";
@@ -39,7 +45,7 @@ const { Option } = Select;
 
 function Activities() {
 
-    const { activities, loading, fetchActivities, addActivity, deleteActivity } = useActivities();
+    const { activities, loading, fetchActivities, addActivity, deleteActivity: deleteActivityContext } = useActivities();
     const { bikes, fetchBikes } = useBikes();
     const { routes, fetchRoutes } = useRoutes();
 
@@ -53,11 +59,26 @@ function Activities() {
         fetchRoutes();
     }, []);
 
-    const showAddModal = () =>{
+    const showAddModal = () => {
         setEditingActivity(null);
         form.setFieldsValue({
             fecha: dayjs(),
             duracion: dayjs("01:00:00", "HH:mm:ss"),
+        });
+        setIsModalOpen(true);
+    };
+
+    const showEditModal = (activity) => {
+        setEditingActivity(activity);
+        form.setFieldsValue({
+            fecha: dayjs(activity.fecha),
+            duracion: dayjs(activity.duracion, "HH:mm:ss"),
+            distancia: parseFloat(activity.distancia),
+            calorias: activity.calorias ? parseFloat(activity.calorias) : null,
+            velocidadMedia: parseFloat(activity.velocidadMedia),
+            velocidadMax: parseFloat(activity.velocidadMax),
+            idBici: activity.idBici,
+            idRuta: activity.idRuta,
         });
         setIsModalOpen(true);
     };
@@ -70,16 +91,16 @@ function Activities() {
 
     const handleSave = async (values) => {
         console.log("🚀 handleSave llamado con:", values);
-          try {
+        try {
             // Validar que los campos obligatorios existen
             if (!values.fecha) {
-              message.error("Debes seleccionar una fecha");
-              return;
+                message.error("Debes seleccionar una fecha");
+                return;
             }
 
             if (!values.duracion) {
-              message.error("Debes seleccionar una duración");
-              return;
+                message.error("Debes seleccionar una duración");
+                return;
             }
 
             const fecha = formatDateForBackend(values.fecha);
@@ -87,39 +108,47 @@ function Activities() {
 
             // Validar que el formato sea correcto
             if (!duracion) {
-              message.error("Formato de duración inválido");
-              return;
+                message.error("Formato de duración inválido");
+                return;
             }
 
             const activityData = {
-              fecha,
-              duracion,
-              distancia: values.distancia,
-              velocidadMedia: values.velocidadMedia,
-              velocidadMax: values.velocidadMax,
-              calorias: values.calorias || null,
-              idBici: values.idBici || null,
-              idRuta: values.idRuta || null,
+                fecha,
+                duracion,
+                distancia: values.distancia,
+                velocidadMedia: values.velocidadMedia,
+                velocidadMax: values.velocidadMax,
+                calorias: values.calorias || null,
+                idBici: values.idBici || null,
+                idRuta: values.idRuta || null,
             };
 
             console.log("Datos a enviar:", activityData);
 
-            await addActivity(activityData);
+            if (editingActivity) {
+                // Modo edición
+                await updateActivity(editingActivity.idActividad, activityData);
+                message.success("Actividad actualizada con éxito");
+            } else {
+                // Modo creación
+                await addActivity(activityData);
+                message.success("Actividad creada con éxito");
+            }
+
             handleCancel();
             fetchActivities();
-          } catch (error) {
+        } catch (error) {
             console.error("Error:", error);
             message.error(error.message || "Error al guardar la actividad");
-          }
+        }
     };
 
-
     const handleDelete = async (activityId) => {
-        try{
-            await deleteActivity(activityId);
+        try {
+            await deleteActivityContext(activityId);
             fetchActivities();
-        }catch (error) {
-            message.error(error.message || "Error al eliminar la activida");
+        } catch (error) {
+            message.error(error.message || "Error al eliminar la actividad");
         }
     };
 
@@ -159,7 +188,7 @@ function Activities() {
     };
 
     // Obtenemos el nombre de la ruta
-    const getRouteName = (idRuta) =>{
+    const getRouteName = (idRuta) => {
         const route = routes.find((r) => r.idRuta === idRuta);
         return route ? route.nombreRuta : "Sin ruta";
     }
@@ -209,7 +238,7 @@ function Activities() {
         {/* Resumen de estadisticas */}
         {!loading && activities.length > 0 &&(
             <Row gutter={1} style={{ marginBottom: "32px" }}>
-                <Col xs={24} sm={24} md={10}>  {/* Móvil: vertical, Desktop: horizontal */}
+                <Col xs={24} sm={24} md={10}>
                     <Card>
                     <Statistic
                         title="Total Actividades"
@@ -307,10 +336,9 @@ function Activities() {
                                     key="edit"
                                     type="text"
                                     icon={<EditOutlined />}
-                                    disabled
-                                    title= "Editar no disponible por el momento"
+                                    onClick={() => showEditModal(activity)}
                                 >
-                                Editar
+                                    Editar
                                 </Button>,
                                 <Popconfirm
                                     key="delete"
@@ -321,7 +349,7 @@ function Activities() {
                                     cancelText="Cancelar"
                                     okButtonProps={{ danger: true}}
                                 >
-                                    <Button type="text" danger icon= {<DeleteOutlined />}>
+                                    <Button type="text" danger icon={<DeleteOutlined />}>
                                         Eliminar
                                     </Button>
                                 </Popconfirm>,
@@ -346,6 +374,12 @@ function Activities() {
 
                             {activity.idBici && (
                                 <div style={{ marginBottom: "8px"}}>
+                                    <Tag color="blue">🚴 {getBikeName(activity.idBici)}</Tag>
+                                </div>
+                            )}
+
+                            {activity.idRuta && (
+                                <div style={{ marginBottom: "8px"}}>
                                     <Tag color="green">🗺️ {getRouteName(activity.idRuta)}</Tag>
                                 </div>
                             )}
@@ -366,7 +400,7 @@ function Activities() {
             title={
                 <span style={{ fontSize: "20px", fontWeight: "bold" }}>
                     <TrophyOutlined style={{ marginRight: "8px", color: "#fa8c16"}} />
-                    Registrar Actividad 
+                    {editingActivity ? "Editar Actividad" : "Registrar Actividad"}
                 </span>
             }
             open={isModalOpen}
@@ -392,7 +426,7 @@ function Activities() {
                             <DatePicker
                                 style={{ width: "100%" }}
                                 format="DD/MM/YYYY"
-                                placeholder="Seleciona la fecha"
+                                placeholder="Selecciona la fecha"
                             />
                         </Form.Item>
                     </Col>
@@ -433,7 +467,7 @@ function Activities() {
                         </Form.Item>
                     </Col>
 
-                    <Col spon={12}>
+                    <Col span={12}>
                         <Form.Item
                             label="Calorias"
                             name="calorias"
@@ -472,26 +506,27 @@ function Activities() {
                     </Col>
 
                     <Col span={12}>
-                            <Form.Item
-                                label="Velocidad Maxima (km/h)"
-                                name="velocidadMax"
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: "Ingresa la velocidad máxima",
-                                    },
-                                ]}
-                            >
-                                <InputNumber
-                                    placeholder="45.0"
-                                    style={{ width: "100%" }}
-                                    min={0}
-                                    step={0.1}
-                                    precision={2}
-                                />
+                        <Form.Item
+                            label="Velocidad Maxima (km/h)"
+                            name="velocidadMax"
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Ingresa la velocidad máxima",
+                                },
+                            ]}
+                        >
+                            <InputNumber
+                                placeholder="45.0"
+                                style={{ width: "100%" }}
+                                min={0}
+                                step={0.1}
+                                precision={2}
+                            />
                         </Form.Item>
                     </Col>
                 </Row>
+
                 <Form.Item label="Bicicleta" name="idBici">
                     <Select
                         placeholder="Selecciona una bici (opcional)"
@@ -506,25 +541,25 @@ function Activities() {
                 </Form.Item>
 
                 <Form.Item label="Ruta" name="idRuta">
-                        <Select placeholder="Selecciona una ruta (opcional)" allowClear>
-                            {routes.map((route) => (
-                                <Option key={route.idRuta} value={route.idRuta}>
-                                    🗺️ {route.nombreRuta} ({route.distancia} km)    
-                                </Option>
-                            ))}
-                        </Select>
+                    <Select placeholder="Selecciona una ruta (opcional)" allowClear>
+                        {routes.map((route) => (
+                            <Option key={route.idRuta} value={route.idRuta}>
+                                🗺️ {route.nombreRuta} ({route.distancia} km)    
+                            </Option>
+                        ))}
+                    </Select>
                 </Form.Item>
 
                 <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
                     <Button onClick={handleCancel} style={{ marginRight: "8px" }}>
-                            Cancelar
+                        Cancelar
                     </Button>
                     <Button
                         type="primary"
                         htmlType="submit"
                         style={{ backgroundColor: "#fa8c16", borderColor: "#fa8c16"}}
                     >
-                        Registrar Actividad
+                        {editingActivity ? "Actualizar Actividad" : "Registrar Actividad"}
                     </Button>         
                 </Form.Item>            
             </Form>

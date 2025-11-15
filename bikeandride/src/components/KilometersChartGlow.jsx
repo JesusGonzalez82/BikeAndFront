@@ -1,5 +1,5 @@
 "use client";
-import { CartesianGrid, Line, LineChart, XAxis, ReferenceLine } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, ReferenceLine, ResponsiveContainer } from "recharts";
 import {
   Card,
   CardContent,
