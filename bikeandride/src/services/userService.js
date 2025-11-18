@@ -1,4 +1,5 @@
 import config from '../config/enviroment';
+
 const API_BASE = config.API_URL;
 const API_USERS = `${API_BASE}/users`;
 
@@ -42,23 +43,31 @@ export const updateUser = async (id, updates) => {
   return await response.json();
 };
 
-//  DELETE - Desactivar usuario
-export const deactivateUser = async (id) => {
-  const response = await fetch(`${API_USERS}/${id}`, {
-    method: 'DELETE',
-    ...fetchConfig,
+// DELETE - Desactivar usuario (soft delete)
+export const deactivateUser = async (userId) => {
+  const response = await fetch(`${API_USERS}/${userId}`, {
+    method: "DELETE",
+    headers: fetchConfig.headers,
   });
-  if (!response.ok) throw new Error('Error al desactivar el usuario');
+
+  if (!response.ok) {
+    throw new Error("Error al desactivar el usuario");
+  }
+
   return await response.json();
 };
 
-//  PUT - Reactivar usuario
-export const reactivateUser = async (id) => {
-  const response = await fetch(`${API_USERS}/${id}/reactivate`, {
-    method: 'PUT',
-    ...fetchConfig,
+// PUT - Reactivar usuario
+export const reactivateUser = async (userId) => {
+  const response = await fetch(`${API_USERS}/${userId}/reactivate`, {
+    method: "PUT",
+    headers: fetchConfig.headers,
   });
-  if (!response.ok) throw new Error('Error al reactivar el usuario');
+
+  if (!response.ok) {
+    throw new Error("Error al reactivar el usuario");
+  }
+
   return await response.json();
 };
 
@@ -71,9 +80,16 @@ export const loginUser = async (email, password) => {
   });
 
   if (!response.ok) {
-    if (response.status === 401) throw new Error('Usuario o contraseña incorrectos');
-    if (response.status === 403) throw new Error('Usuario inactivo. Contacta con el administrador');
-    throw new Error('Error al iniciar sesión');
+    const errorData = await response.json().catch(() => ({}));
+    const error = new Error(errorData.error || "Error al iniciar sesión: ");
+
+    error.response = {
+      status: response.status,
+      data: errorData
+    };
+
+    throw error;
+    
   }
 
   return await response.json();

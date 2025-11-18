@@ -1,6 +1,6 @@
-import React from "react";
-import { Menu, Avatar, Dropdown, Space, Modal } from "antd"; // ← Añadimos Avatar, Dropdown, Space
-import { Link, useLocation, useNavigate } from "react-router-dom"; // ← Para navegación
+import React, { useState, useEffect } from "react";
+import { Menu, Avatar, Dropdown, Space, Modal } from "antd"; 
+import { Link, useLocation, useNavigate } from "react-router-dom"; 
 import {
   UserOutlined,
   LogoutOutlined,
@@ -13,15 +13,35 @@ import {
   GithubOutlined,
   LinkedinFilled,
   InstagramOutlined,
-} from "@ant-design/icons"; // ← Iconos
-import { useAuth } from "../context/AuthContext"; // ← Para obtener el usuario
+} from "@ant-design/icons";
+import { useAuth } from "../context/AuthContext";
+import { getProfileImage } from "../services/imageService";
 
 function Navbar({ showMenuItems = true }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isContactModalOpen, setIsContactModalOpen] = React.useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
   const isHome = location.pathname === '/home';
+
+  useEffect(() => {
+    const loadProfileImage =async () => {
+      if (user && user.idUser) {
+        console.log("=== CARGANDO IMAGEN DE PERFIL EN NAVBAR ===");
+        console.log("User ID: ", user.idUser);
+        try{
+          const imageUrl = await getProfileImage(user.idUser);
+          console.log("Imagen cargada en navbar: ", imageUrl);
+          setProfileImageUrl(imageUrl);
+        }catch (error){
+          console.log("No se pudo cargar la foto de perfil en navbar: ", error);
+          setProfileImageUrl(null);
+        }
+      }
+    };
+    loadProfileImage();
+  }, [user]);
 
   const userMenuItems = [
     {
@@ -132,10 +152,14 @@ function Navbar({ showMenuItems = true }) {
         >
           <Space style={{ cursor: "pointer", paddingLeft: "16px" }}>
             <Avatar
-              style={{ backgroundColor: "#1890ff" }}
-              icon={<UserOutlined />}
+              style={{ 
+                backgroundColor: profileImageUrl ? "transparent" : "#1890ff",
+                border: profileImageUrl ? "2px solid #fff" : "none"
+              }}
+              icon={!profileImageUrl ? <UserOutlined /> : null}
+              src={profileImageUrl}
             >
-              {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+              {!profileImageUrl && user.name ? user.name.charAt(0).toUpperCase() : null}
             </Avatar>
             <span style={{ color: "#fff" }}>{user.name || "Usuario"}</span>
           </Space>

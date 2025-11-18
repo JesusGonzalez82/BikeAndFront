@@ -67,7 +67,7 @@ function Home() {
   };
 
   return (
-    <div style={{ padding: "0px", maxWidth: "1200px", margin: "0 auto" }}>
+    <div style={{ padding: "0px", maxWidth: "1200px", margin: "0 auto", width:"100%"}}>
       {/* Bienvenida */}
       <div style={{ marginBottom: "16px" }}>
         <Title level={2}>¡Bienvenido, {user?.name}! 🚴</Title>
