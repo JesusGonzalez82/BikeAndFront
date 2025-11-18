@@ -49,11 +49,18 @@ useEffect(() =>{
         setIsAuthenticated(false);
     };
 
+    const updateUserContext = (updateUserData) => {
+        const updateUser = { ...updateUserData };
+        localStorage.setItem('user', JSON.stringify(updateUser));
+        setUser(updateUser);
+    }
+
     const value = {
         user,
         isAuthenticated,
         login,
         logout,
+        updateUserContext,
         loading
     };
 

@@ -52,6 +52,9 @@ function Login() {
       const errorData = error.response?.data || {};
       const backendMessage = errorData.error || error.message || "Error desconocido";
 
+      console.log("errorStatus: ", errorStatus);
+      console.log("error.response: ", error.response);
+
       // ==== DETECCIÓN DIRECTA - SIN COMPLICACIONES ====
       if (errorStatus === 403) {
         // **CUENTA INACTIVA**
@@ -72,30 +75,61 @@ function Login() {
     }
   };
 
-  const handleReactivate = async () => {
-    setLoading(true);
-    try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || "https://bikeback.yustaspace.es";
-      const response = await fetch(`${API_BASE_URL}/users/${inactiveEmail}/reactivate`, {
-        method: 'PUT', // Tu backend usa PUT
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al reactivar');
-      }
-      
-      message.success("✅ Cuenta reactivada exitosamente. Ya puedes iniciar sesión.", 5);
-      setShowReactivate(false);
-      setInactiveEmail('');
-      setErrorMessage('');
-    } catch (error) {
-      message.error(`❌ ${error.message}`, 5);
-    } finally {
-      setLoading(false);
+const handleReactivate = async () => {
+  console.log("=== INICIANDO REACTIVACIÓN ===");
+  
+  const userId = localStorage.getItem('deactivatedUserId');
+  console.log("userId recuperado de localStorage:", userId);
+  
+  if (!userId) {
+    console.log("❌ NO SE ENCONTRÓ userId en localStorage");
+    message.error("No se pudo recuperar tu ID de usuario. Por favor, contacta con soporte.");
+    return;
+  }
+  
+  setLoading(true);
+  try {
+    const API_BASE_URL = process.env.REACT_APP_API_URL || "https://bikeback.yustaspace.es";
+    console.log("API_BASE_URL:", API_BASE_URL);
+    console.log("Llamando a:", `${API_BASE_URL}/users/${userId}/reactivate`);
+    
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/reactivate`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    console.log("Response status:", response.status);
+    console.log("Response ok:", response.ok);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.log("Error data:", errorData);
+      throw new Error(errorData.error || 'Error al reactivar la cuenta');
     }
-  };
+    
+    const responseData = await response.json();
+    console.log("✅ Reactivación exitosa:", responseData);
+    
+    message.success("✅ Cuenta reactivada con éxito!");
+    localStorage.removeItem('deactivatedUserId');
+    setShowReactivate(false);
+    setInactiveEmail('');
+    setErrorMessage('');
+    
+    // Auto-login después de reactivar
+    const password = form.getFieldValue('password');
+    console.log("Password para auto-login:", password ? "existe" : "NO existe");
+    
+    if (password) {
+      await authenticatedWithAPI(inactiveEmail, password);
+    }
+  } catch (error) {
+    console.error("❌ ERROR en reactivación:", error);
+    message.error(`❌ ${error.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const onFinish = async (values) => {
     console.log("Datos enviados:", values);
@@ -184,10 +218,38 @@ function Login() {
         }
         
         /* === ESTILO DEL BANNER DE REACTIVACIÓN === */
-        .reactivate-banner { background: #fca311 !important; padding: 20px; border-radius: 15px; margin-top: 20px; text-align: center; border: 3px solid #48e; box-shadow: 0 0 20px rgba(72, 136, 238, 0.5); animation: fadeIn 0.5s ease; width: 100%; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        .reactivate-banner p { color: #000 !important; margin-bottom: 15px; font-weight: 600; font-size: 1rem; }
-        .reactivate-btn { background: #48e !important; color: #fff !important; padding: 12px 25px; font-size: 1em; font-weight: 600; border-radius: 30px; border: none; cursor: pointer; transition: all 0.3s ease; width: auto; }
+        .reactivate-banner { 
+        background: #fca311 !important; 
+        padding: 2px; 
+        border-radius: 10px; 
+        margin-top: 1px; 
+        text-align: center; 
+        border: 3px solid #48e; 
+        box-shadow: 0 0 20px rgba(72, 136, 238, 0.5); 
+        animation: fadeIn 0.5s ease; width: 100%; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } 
+        }
+
+        .reactivate-banner p { 
+        color: #000 !important; 
+        margin-bottom: 15px; 
+        font-weight: 600; 
+        font-size: 1rem; 
+        }
+
+        .reactivate-btn { 
+        background: #48e !important; 
+        color: #fff !important; 
+        padding: 12px 25px; 
+        font-size: 1em; 
+        font-weight: 600; 
+        border-radius: 30px; 
+        border: none; 
+        cursor: pointer; 
+        transition: all 0.3s ease;
+         width: auto; 
+         }
+
         .reactivate-btn:hover { box-shadow: 0 0 15px #48e; transform: translateY(-2px); }
         .reactivate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         

@@ -74,7 +74,13 @@ export const getProfileImage = async (userId) => {
     throw new Error("Error al obtener la imagen de perfil");
   }
 
-  return await response.json();
+  const imageData = await response.json();
+
+  if (!imageData || !imageData.contenidoBase64){
+    return null;
+  }
+
+  return `data:${imageData.tipoMime};base64,${imageData.contenidoBase64}`;
 };
 
 // GET - Obtener imagen de banner
@@ -90,7 +96,13 @@ export const getBannerImage = async (userId) => {
     throw new Error("Error al obtener el banner");
   }
 
-  return await response.json();
+  const imageData = await response.json();
+
+  if (!imageData || !imageData.contenidoBase64){
+    return null;
+  }
+
+  return `data:${imageData.tipoMime};base64,${imageData.contenidoBase64}`;
 };
 
 // ==================== UTILIDADES ====================

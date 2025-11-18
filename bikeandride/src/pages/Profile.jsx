@@ -62,35 +62,28 @@ function Profile() {
       setLoading(true);
 
       try {
-        const profileData = await getProfileImage(user.idUser);
-        if (profileData) {
-          const profileUrl = base64ToImageUrl(
-            profileData.contenidoBase64,
-            profileData.tipoMime
-          );
+        const profileUrl = await getProfileImage(user.idUser);
+        if (profileUrl){
           setProfileImage(profileUrl);
         }
-      } catch (err) {
-        console.log("No profile image found");
+      } catch (err){
+        console.log("No hay imagen de perfil");
       }
 
-      try {
-        const bannerData = await getBannerImage(user.idUser);
-        if (bannerData) {
-          const bannerUrl = base64ToImageUrl(
-            bannerData.contenidoBase64,
-            bannerData.tipoMime
-          );
+      try{
+        const bannerUrl = await getBannerImage(user.idUser);
+        if(bannerUrl){
           setBackgroundImage(bannerUrl);
         }
-      } catch (err) {
-        console.log("No background image found");
+      }catch(err){
+        console.log("no hay ningun banner establecido");
       }
-    } catch (error) {
-      console.error("Error loading images:", error);
-    } finally {
+    }catch (error){
+      console.error("Error al cargar las imagenes: ", error);
+    }finally{
       setLoading(false);
     }
+
   };
 
   const handleProfileUploadSuccess = () => {
@@ -174,16 +167,27 @@ function Profile() {
   };
 
   const handleDeactivateAccount = async () => {
-    try {
-      await deactivateUser(user.idUser);
-      
-      const updatedUser = { ...user, status: "inactivo" };
-      updateUserContext(updatedUser);
+    console.log("=== INICIANDO DESACTIVACION ===");
+    console.log("User objeto completo: ", user);
+    console.log("user ID: ", user.idUser);
 
-      message.warning("Cuenta desactivada. Puedes reactivarla en cualquier momento.");
-    } catch (error) {
-      console.error("Error deactivating account:", error);
-      message.error("Error al desactivar la cuenta");
+    try {
+      console.log("Guardando en localStorage ANTES de desactivar:", user.idUser);
+    localStorage.setItem('deactivatedUserId', user.idUser);
+    console.log("Verificando guardado:", localStorage.getItem('deactivatedUserId'));
+    
+    console.log("Llamando a deactivateUser con ID:", user.idUser);
+    await deactivateUser(user.idUser);
+    
+    console.log("✅ Usuario desactivado exitosamente");
+    
+    const updatedUser = { ...user, status: "inactivo" };
+    updateUserContext(updatedUser);
+
+    message.warning("Cuenta desactivada. Puedes reactivarla en cualquier momento.");
+  } catch (error) {
+    console.error("❌ Error deactivating account:", error);
+    message.error("Error al desactivar la cuenta");
     }
   };
 

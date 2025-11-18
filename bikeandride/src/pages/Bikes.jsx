@@ -195,10 +195,10 @@ const handleSave = async (values) => {
       {!loading && bikes.length > 0 && (
         <Row gutter={[16, 16]}>
           {bikes.map((bike) => (
-            <Col xs={24} sm={12} md={8} lg={6} key={bike.id_bici}>
+            <Col xs={24} sm={12} md={8} lg={6} key={bike.id_bici} style={{ display: 'flex'}}>
               <Card
                 hoverable
-                style={{ height: "100%" }}
+                style={{ height: "100%" ,width: "100%", minWidth: "280px", maxWidth:"400px" }}
                 cover={
                   <div
                     style={{

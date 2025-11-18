@@ -80,9 +80,16 @@ export const loginUser = async (email, password) => {
   });
 
   if (!response.ok) {
-    if (response.status === 401) throw new Error('Usuario o contraseña incorrectos');
-    if (response.status === 403) throw new Error('Usuario inactivo. Contacta con el administrador');
-    throw new Error('Error al iniciar sesión');
+    const errorData = await response.json().catch(() => ({}));
+    const error = new Error(errorData.error || "Error al iniciar sesión: ");
+
+    error.response = {
+      status: response.status,
+      data: errorData
+    };
+
+    throw error;
+    
   }
 
   return await response.json();
