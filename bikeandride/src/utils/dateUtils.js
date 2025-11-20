@@ -1,4 +1,7 @@
 import dayjs from 'dayjs';
+import 'dayjs/locale/es';
+
+dayjs.locale('es');
 
 /**
  * Utilidades para manejar fechas entre backend y frontend

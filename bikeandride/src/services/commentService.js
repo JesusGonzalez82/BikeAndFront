@@ -54,7 +54,7 @@ export const addComment = async (activityId, texto) => {
         fecha: getCurrentDateForBackend()
     };
 
-    const response = await fetch(`${API_BASE_URL}/comentarios`, {
+    const response = await fetch(`${API_BASE_URL}/comentarios/create`, {
         method: 'POST',
         headers: {
             'Authorization': `${tokenType} ${token}`,

@@ -12,18 +12,27 @@ import {
     Spin,
     Typography,
 } from "antd";
+import {
+    UserOutlined,
+    SendOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    MessageOutlined,
+} from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import {
     getComments,
-    addComments,
-    updateComments,
-    deleteComments,
+    addComment as addCommentService,
+    updateComment as updateCommentService,
+    deleteComment as deleteCommentService,
 } from "../services/commentService";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import utc from "dayjs/plugin/utc";
 import { formatDateToSpanish } from "../utils/dateUtils";
 
 dayjs.extend(relativeTime);
+dayjs.extend(utc);
 dayjs.locale("es");
 
 const { TextArea } = Input;
@@ -46,6 +55,7 @@ function CommentSection({ activityId }) {
         try {
             setLoading(true);
             const data = await getComments(activityId);
+            console.log("Comentarios recibidos: ", data)
             setComments(data);
         }catch (error){
             console.error("Error loading comments: ", error);
@@ -63,7 +73,7 @@ function CommentSection({ activityId }) {
 
         try {
             setSubmitting(true);
-            await addComments(activityId, newComment.trim());
+            await addCommentService(activityId, newComment.trim());
             message.success("Comentario añadido");
             setNewComment();
             loadComments();
@@ -82,7 +92,7 @@ function CommentSection({ activityId }) {
         }
 
         try {
-            await updateComments(commentId, editingText.trim());
+            await updateCommentService(commentId, editingText.trim());
             message.success("Comentario actualizado");
             setEditingCommentId(null);
             setEditingText("");
@@ -93,5 +103,174 @@ function CommentSection({ activityId }) {
         }
     };
 
-    
+    const handleDeleteComment = async (commentId) => {
+        try {
+            await deleteCommentService (commentId);
+            message.success("Comentario editado");
+            loadComments();
+        }catch (error) {
+            console.error("Error deleting: ", error);
+            message.error(error.message || "Error al eliminar el comentario");
+        }
+    };
+
+    const startEditing = (comment) => {
+        setEditingCommentId(comment.idComentario);
+        setEditingText(comment.comentario);
+    };
+
+    const cancelEditing = () => {
+        setEditingCommentId(null);
+        setEditingText("");
+    };
+
+    if (loading) {
+        return (
+            <Card>
+                <div style={{ textAlign: "center", padding:"40px" }}>
+                    <Spin size="large" />
+                </div>
+            </Card>
+        );
+    }
+
+    return (
+        <Card
+            title={
+                <Space>
+                    <MessageOutlined  style={{ color: "#1890ff "}} />
+                    <span>Comentarios ({comments.length})</span>
+                </Space>
+            }
+        >
+            {/* Añadimos un formulario apra añadir comentarios */}
+            <div style={{ marginBottom: "24px" }}>
+                <Space.Compact style={{ width: "100%"}}>
+                    <TextArea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Escribe tu comentario..."
+                        autoSize={{ minRows:2, maxRows:4}}
+                        onPressEnter={(e) => {
+                            if (e.shiftKey) return; // Permitimos shift + enter para bajar una linea
+                            e.preventDefault();
+                            handleAddComment();
+                        }}
+                    />
+                </Space.Compact>
+                <Button
+                    type="primary"
+                    icon={<SendOutlined />}
+                    onClick={handleAddComment}
+                    loading={submitting}
+                    style={{ marginTop: "8px", float:"right"}}
+                >
+                    Comentar
+                </Button>
+                <div style={{ clear: "both"}} />
+            </div>
+
+            {/** Añadimos la lista de los comentarios */}
+            {comments.length === 0 ? (
+                <Empty
+                    description="No hay comentarios todavía, a que esperas!"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
+            ) : (
+                <List
+                    dataSource={comments}
+                    renderItem={(comment) => {
+                        const isOwner = user?.idUser === comment.idUsuario;
+                        const isEditing = editingCommentId === comment.idComentario;
+
+                        return (
+                            <List.Item
+                                key={comment.idComentario}
+                                actions={
+                                    isOwner ? [
+                                        isEditing ? (
+                                            <Button
+                                                type="link"
+                                                size="small"
+                                                onClick={() => handleEditComment(comment.idComentario)}
+                                            >
+                                                Guardar
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                type="link"
+                                                size="small"
+                                                icon={<EditOutlined />}
+                                                onClick={() => startEditing(comment)}
+                                            >
+                                                Editar
+                                            </Button>
+                                        ),
+                                        isEditing ? (
+                                            <Button
+                                                type="link"
+                                                size="small"
+                                                onClick={cancelEditing}
+                                            >
+                                                Cancelar
+                                            </Button>
+                                        ) : (
+                                            <Popconfirm
+                                                title="¿Desea eliminar el comentario?"
+                                                description="Esta acción no se puede deshacer"
+                                                onConfirm={() => handleDeleteComment(comment.idComentario)}
+                                                okText="Eliminar"
+                                                cancelText="Cancelar"
+                                                okButtonProps={{ danger: true}}
+                                            >
+                                                Eliminar
+                                            </Popconfirm>
+                                        ),
+                                    ]
+                                : []
+                                }
+                            >
+                                <List.Item.Meta
+                                    avatar={
+                                        <Avatar
+                                            style={{ backgroundcolor: "#1890ff"}}
+                                            icon={<UserOutlined />}
+                                        />
+                                    }
+                                    title={
+                                        <Space>
+                                            <Text strong>{comment.idUsuario === user?.idUser ? user?.name : `Usuario #${comment.idUsuario}`}</Text>
+                                            <Text type="secondary" style={{ fontSize: "12px"}}>
+                                                {comment.fecha
+                                                    ? dayjs(comment.fecha).isSame(dayjs(), 'day')
+                                                        ? "Hoy"
+                                                        : dayjs(comment.fecha).fromNow()
+                                                    : "Hace un momento"}
+                                            </Text>
+                                        </Space>
+                                    }
+                                    description={
+                                        isEditing ? (
+                                            <TextArea
+                                                value={editingText}
+                                                onChange={(e) => setEditingText(e.target.value)}
+                                                autoSize={{ minRows: 2, maxRows: 4}}
+                                                style={{ margin: "8px"}}
+                                            />
+                                        ) : (
+                                            <div style={{ whiteSpace: "pre-wrap", marginTop: "8px"}}>
+                                                {comment.comentario}
+                                            </div>
+                                        )
+                                    }
+                                />
+                            </List.Item>
+                        );
+                    }}
+                />
+            )}
+        </Card>
+    );  
 }
+
+export default CommentSection;
