@@ -6,7 +6,7 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { Layout } from "antd";
+import { Layout, App as AntApp } from "antd";
 import "./App.css";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
@@ -153,9 +153,11 @@ function App() {
         <RouteProvider>
           <ActivityProvider>
             <StatsProvider>
+              <AntApp>
               <Router>
                 <LayoutWrapper />
               </Router>
+              </AntApp>
             </StatsProvider>
           </ActivityProvider>
         </RouteProvider>
