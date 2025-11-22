@@ -13,20 +13,26 @@ import {
   Typography,
   Empty,
   Spin,
-  //Popconfirm,
   Tag,
+  Drawer,
+  Tabs,
+  Descriptions
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined, InfoCircleOutlined, ToolOutlined } from "@ant-design/icons";
 import { useBikes } from "../context/BikeContext";
+import BikeImageCarousel from "../components/BikeImageCarousel";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
 function Bikes() {
   const { bikes, loading, fetchBikes, addBike, updateBike } = useBikes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBike, setEditingBike] = useState(null);
   const [form] = Form.useForm();
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [selectedBike, setSelectedBike] = useState(null);
 
   useEffect(() => {
     fetchBikes();
@@ -49,6 +55,7 @@ function Bikes() {
     form.setFieldsValue({
       tipo_bici: bike.type,
       anio: parseInt(bike.birthday),
+      // weight: bike.peso ? parseFloat(bike.peso) : null,
       status: bike.status,
     });
     setIsModalOpen(true);
@@ -63,19 +70,34 @@ function Bikes() {
 const handleSave = async (values) => {
   try {
     if (editingBike) {
-      // ==================== EDITAR ====================
-      const updateData = {
-        type: values.type,
-        birthday: values.birthday,
-        status: values.status,
-      };
+  // Solo enviar campos que realmente cambiaron
+  const updateData = {};
+  
+  if (values.type && values.type !== editingBike.tipo_bici) {
+    updateData.type = values.type;
+  }
+  if (values.birthday && values.birthday !== parseInt(editingBike.anio)) {
+    updateData.birthday = values.birthday;
+  }
+  if (values.weight && values.weight !== parseFloat(editingBike.peso)) {
+    updateData.weight = parseFloat(values.weight);
+  }
+  if (values.status && values.status !== editingBike.status) {
+    updateData.status = values.status;
+  }
+  
+  // Verificar que hay algo que actualizar
+  if (Object.keys(updateData).length === 0) {
+    message.info("No hay cambios que guardar");
+    handleCancel();
+    return;
+  }
       
       console.log("Actualizando bici con:", updateData);
       await updateBike(editingBike.id_bici, updateData);
       message.success("Bicicleta actualizada correctamente");
       
     } else {
-      // ==================== CREAR ====================
       const user = JSON.parse(localStorage.getItem("user"));
       if (!user || !user.idUser) {
         message.error("Usuario no autenticado");
@@ -104,6 +126,16 @@ const handleSave = async (values) => {
     console.error("Error:", error);
     message.error(error.message || "Error al guardar la bicicleta");
   }
+};
+
+const handleCardClick = (bike) => {
+  setSelectedBike(bike);
+  setDrawerVisible(true);
+};
+
+const handleDrawerClose = () => {
+  setDrawerVisible(false);
+  setSelectedBike(null);
 };
 
   // const handleDelete = async (bikeId) => {
@@ -198,6 +230,7 @@ const handleSave = async (values) => {
             <Col xs={24} sm={12} md={8} lg={6} key={bike.id_bici} style={{ display: 'flex'}}>
               <Card
                 hoverable
+                onClick={() => handleCardClick(bike)}
                 style={{ height: "100%" ,width: "100%", minWidth: "280px", maxWidth:"400px" }}
                 cover={
                   <div
@@ -218,15 +251,22 @@ const handleSave = async (values) => {
                   <Button
                     type="text"
                     icon={<EditOutlined />}
-                    onClick={() => showEditModal(bike)}
+                    disabled={bike.status === "vendida"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (bike.status !== "vendida"){
+                      showEditModal(bike);
+                      }
+                    }}
                   >
-                    Editar
+                    {bike.status === "vendida" ? "vendida" : "Editar"}
                   </Button>,
                   <Button
                     type="text"
                     danger
                     icon={<DeleteOutlined />}
                     disabled
+                    onClick={(e) => e.stopPropagation()}
                     title="Eliminar no disponible"
                   >
                     Eliminar
@@ -386,6 +426,7 @@ const handleSave = async (values) => {
                   size="large"
                 />
               </Form.Item>
+                
               <Form.Item
                 label="Estado"
                 name="status" // Campo backend: status
@@ -419,7 +460,7 @@ const handleSave = async (values) => {
                   {editingBike.marca} {editingBike.modelo}
                 </Text>
                 <div style={{ marginTop: "8px", color: "#8c8c8c" }}>
-                  Solo puedes editar: Tipo, Año y Estado
+                  Solo puedes editar: Tipo, peso Año y Estado
                 </div>
               </div>
 
@@ -428,7 +469,6 @@ const handleSave = async (values) => {
                 name="type"
                 rules={[
                   {
-                    required: true,
                     message: "Selecciona el tipo de bicicleta",
                   },
                 ]}
@@ -447,7 +487,7 @@ const handleSave = async (values) => {
                 label="Año"
                 name="birthday"
                 rules={[
-                  { required: true, message: "Ingresa el año de tu bicicleta" },
+                  { message: "Ingresa el año de tu bicicleta" },
                 ]}
               >
                 <InputNumber
@@ -460,11 +500,31 @@ const handleSave = async (values) => {
               </Form.Item>
 
               <Form.Item
+                label="Peso (kg)"
+                name="weight"
+                rules={[
+                  {
+                  
+                  message: "Por favor, introduce el peso de la bicicleta",
+                  },
+                ]}
+                >
+                  <InputNumber
+                    placeholder="12.5"
+                    size="large"
+                    style={{ width: "100%" }}
+                    min={0}
+                    step={0.1}
+                    precision={2}
+                  />
+                </Form.Item>
+
+              <Form.Item
                 label="Estado"
                 name="status"
                 rules={[
                   {
-                    required: true,
+                    
                     message: "Selecciona el estado de tu bicicleta",
                   },
                 ]}
@@ -487,6 +547,96 @@ const handleSave = async (values) => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Drawer con detalles de la bicicleta */}
+      <Drawer
+        title={selectedBike ? `${selectedBike.marca} ${selectedBike.modelo}` : "Detalles"}
+        placement="right"
+        onClose={handleDrawerClose}
+        open={drawerVisible}
+        width={600}
+      >
+        {selectedBike && (
+          <Tabs defaultActiveKey="1">
+            {/* Pestaña de fotos */ }
+            <TabPane
+              tab={
+                <span>
+                  <PictureOutlined /> Fotos
+                </span>
+              }
+              key="1"
+            >
+              <BikeImageCarousel bikeId={selectedBike.id_bici} />
+            </TabPane>
+
+            {/* Pestaña de información de la bici */}
+            <TabPane
+              tab={
+                <span>
+                  <InfoCircleOutlined /> Información
+                </span>
+              }
+              key="2"
+            >
+              <Descriptions bordered column={1} style={{ marginBottom: '24px' }}>
+                <Descriptions.Item label="Marca">{selectedBike.marca}</Descriptions.Item>
+                <Descriptions.Item label="Modelo">{selectedBike.modelo}</Descriptions.Item>
+                <Descriptions.Item label="tipo">{selectedBike.tipo_bici}</Descriptions.Item>
+                <Descriptions.Item label="Año">{selectedBike.anio}</Descriptions.Item>
+                <Descriptions.Item label="Estado">
+                  <Tag color={getStatusColor(selectedBike.status)}>
+                    {selectedBike.status}
+                  </Tag>
+                </Descriptions.Item>
+                {selectedBike.peso && (
+                  <Descriptions.Item label="Peso">
+                    {parseFloat(selectedBike.peso).toFixed(2)} kg
+                  </Descriptions.Item>
+                )}
+                {selectedBike.material && (
+                  <Descriptions.Item label="Material">
+                    {selectedBike.material}
+                  </Descriptions.Item>
+                )}
+              </Descriptions>
+
+              {selectedBike.status !== "vendida" ? (
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  handleDrawerClose();
+                  showEditModal(selectedBike);
+                }}
+                block
+              >
+                Editar Bici
+              </Button>
+            ) : (
+              <Button
+                disabled
+                block
+              >
+                ❌ Bicicleta vendida - No editable
+              </Button>
+            )}
+            </TabPane>
+
+            {/* Pestaña mantenimiento **Proximamente** */}
+            <TabPane
+              tab={
+                <span>
+                  <ToolOutlined /> Mantenimiento
+                </span>
+              }
+              key="3"
+            >
+              <Empty description="Historial de mantenimiento. - PROXIMAMENTE -" />
+            </TabPane>
+          </Tabs>
+        )}
+      </Drawer>
     </div>
   );
 }

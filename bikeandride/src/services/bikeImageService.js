@@ -16,7 +16,7 @@ export const uploadBikeImages = async (bikeId, imageFiles) => {
     }
 
     const formData = new FormData();
-    imageFiles.foreach(file =>{
+    imageFiles.forEach(file =>{
         formData.append("files", file);
     });
 
