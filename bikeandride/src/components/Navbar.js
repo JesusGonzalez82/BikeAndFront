@@ -32,7 +32,7 @@ function Navbar({ showMenuItems = true }) {
         console.log("User ID: ", user.idUser);
         try{
           const imageUrl = await getProfileImage(user.idUser);
-          console.log("Imagen cargada en navbar: ", imageUrl);
+          // console.log("Imagen cargada en navbar: ", imageUrl);
           setProfileImageUrl(imageUrl);
         }catch (error){
           console.log("No se pudo cargar la foto de perfil en navbar: ", error);
