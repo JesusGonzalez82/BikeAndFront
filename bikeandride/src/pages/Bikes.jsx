@@ -486,9 +486,7 @@ const handleDrawerClose = () => {
               <Form.Item
                 label="Año"
                 name="birthday"
-                rules={[
-                  { message: "Ingresa el año de tu bicicleta" },
-                ]}
+                
               >
                 <InputNumber
                   placeholder="2023"
@@ -502,12 +500,7 @@ const handleDrawerClose = () => {
               <Form.Item
                 label="Peso (kg)"
                 name="weight"
-                rules={[
-                  {
-                  
-                  message: "Por favor, introduce el peso de la bicicleta",
-                  },
-                ]}
+                
                 >
                   <InputNumber
                     placeholder="12.5"
@@ -522,12 +515,7 @@ const handleDrawerClose = () => {
               <Form.Item
                 label="Estado"
                 name="status"
-                rules={[
-                  {
-                    
-                    message: "Selecciona el estado de tu bicicleta",
-                  },
-                ]}
+                
               >
                 <Select size="large">
                   <Option value="en uso">✅ En uso</Option>
