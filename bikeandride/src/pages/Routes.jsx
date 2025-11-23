@@ -15,19 +15,26 @@ import {
   Spin,
   Popconfirm,
   Tag,
+  Drawer,
+  Tabs,
+  Descriptions,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined, PictureOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { useRoutes } from "../context/RouteContext";
+import RouteCoverImage from "../components/RouteCoverImage";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
+const { TabPane } = Tabs;
 
 function Routes() {
   const { routes, loading, fetchRoutes, addRoute, updateRoute, deleteRoute } = useRoutes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState(null);
   const [form] = Form.useForm();
+  const [drawerVisbile, setDrawerVisible] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState(null);
 
   useEffect(() => {
     fetchRoutes();
@@ -81,6 +88,16 @@ function Routes() {
     } catch (error) {
       message.error(error.message || "Error al eliminar la ruta");
     }
+  };
+
+  const handleCardClick = (route) => {
+    setSelectedRoute(route);
+    setDrawerVisible(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerVisible(false);
+    setSelectedRoute(null);
   };
 
   const getTerrainColor = (tipo) => {
@@ -160,7 +177,8 @@ function Routes() {
             <Col xs={24} sm={12} md={8} lg={6} key={route.idRuta}>
               <Card
                 hoverable
-                style={{ height: "100%" }}
+                onClick={() => handleCardClick(route)}
+                style={{ height: "100%", cursor: "pointer" }}
                 cover={
                   <div
                     style={{
@@ -180,7 +198,10 @@ function Routes() {
                     key="edit"
                     type="text"
                     icon={<EditOutlined />}
-                    onClick={() => showEditModal(route)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showEditModal(route);
+                    }}
                   >
                     Editar
                   </Button>,
@@ -188,15 +209,23 @@ function Routes() {
                     key="delete"
                     title="¿Eliminar ruta?"
                     description="Esta acción no se puede deshacer"
-                    onConfirm={() => handleDelete(route.idRuta)}
+                    onConfirm={(e) => {
+                      e?.stopPropagation();
+                      handleDelete(route.idRuta);
+                    }}
                     okText="Sí, eliminar"
                     cancelText="Cancelar"
                     okButtonProps={{ danger: true }}
                   >
-                    <Button type="text" danger icon={<DeleteOutlined />}>
+                    <Button 
+                      type="text" 
+                      danger 
+                      icon={<DeleteOutlined />}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       Eliminar
                     </Button>
-                  </Popconfirm>,
+                  </Popconfirm>
                 ]}
               >
                 <Card.Meta
@@ -322,6 +351,67 @@ function Routes() {
           </Form.Item>
         </Form>
       </Modal>
+      {/* Drawer con detalles de la ruta */ }
+      <Drawer
+        title={selectedRoute ? selectedRoute.nombreRuta : "Detalles de la ruta"}
+        placement="right"
+        onClose={handleDrawerClose}
+        open={drawerVisbile}
+        width={600}
+      >
+        {selectedRoute && (
+          <Tabs defaultActiveKey="1">
+            {/* Foto de portada */}
+            <TabPane
+              tab={
+                <span>
+                  <PictureOutlined /> Foto de portada
+                </span>
+              }
+              key="1"
+            >
+              <RouteCoverImage routeId={selectedRoute.idRuta} />
+            </TabPane>
+
+            <TabPane
+              tab={
+                <span>
+                  <InfoCircleOutlined /> Información
+                </span>
+              }
+              key="2"
+            >
+              <Descriptions bordered column={1} style={{ marginBottom: "24px" }}>
+                <Descriptions.Item label="Nombre">{selectedRoute.nombreRuta}</Descriptions.Item>
+                <Descriptions.Item label="Distancia">{selectedRoute.distancia} km</Descriptions.Item>
+                <Descriptions.Item label="Desnivel">{selectedRoute.desnivel} m</Descriptions.Item>
+                <Descriptions.Item label="Tipo de Terreno">
+                  <Tag color={getTerrainColor(selectedRoute.tipoTerreno)}>
+                    {getTerrainColor} {selectedRoute.tipoTerreno}
+                  </Tag>
+                </Descriptions.Item>
+                {selectedRoute.descripcionRuta && (
+                    <Descriptions.Item label="Descripción">
+                      {selectedRoute.descripcionRuta}
+                    </Descriptions.Item>
+                )}
+              </Descriptions>
+
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  handleDrawerClose();
+                  showEditModal(selectedRoute);
+                }}
+                block
+              >
+                Editar Ruta
+              </Button>
+            </TabPane>
+          </Tabs>
+        )}
+      </Drawer>
     </div>
   );
 }
