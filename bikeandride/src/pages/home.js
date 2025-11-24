@@ -55,16 +55,106 @@ function Home() {
     setIsStatsModalOpen(false);
   };
 
-  const detailedStats = {
-    totalKm: 1250,
-    totalElevation: 15420,
-    longestActivity: { name: "Ruta por la Sierra", km: 85, elevation: 1850 },
-    fastestActivity: { name: "Dia de Sprinter", avgSpeed: 32 },
-    activeDaysThisMonth: 18,
-    avgPerActivity: 27.8,
-    timePerActivity: "02:45:02",
-    currentStreak: 5,
+  const detailedStats = React.useMemo(() =>{
+    console.log("Debug stats.activities: ", stats.activities);
+    if (!stats.activities || stats.activities.length === 0){
+      return {
+    totalKm: 0,
+    totalElevation: 0,
+    longestActivity: null,
+    fastestActivity: null,
+    activeDaysThisMonth: 0,
+    avgPerActivity: 0,
+    timePerActivity: "00:00:00",
+    currentStreak: 0,
+      };
+    }
+  
+  const activities = stats.activities;
+
+  // Total km y desnivel
+
+  const totalKm = activities.reduce((sum, act) => sum + parseFloat(act.distancia || 0), 0);
+  const totalElevation = activities.reduce((sum, act) => {
+  const ruta = stats.routes?.find(r => r.idRuta === act.idRuta);
+  return sum + parseFloat(ruta?.desnivel || 0);
+}, 0);
+
+  // Actividad más larga
+
+  const longestActivity = activities.reduce((max, act) =>  
+    parseFloat(act.distancia) > parseFloat(max.distancia) ? act : max);
+
+  // Actividad más rápida
+
+  const fastestActivity = activities.reduce((max, act) => 
+    parseFloat(act.velocidadMedia) > parseFloat(max.velocidadMedia) ? act : max);
+
+  // Dias activo en el mes en curso
+
+  const currentMonth = dayjs().month();
+  const currentYear = dayjs().year();
+  const activeDaysThisMonth = new Set(
+    activities.filter(act => {
+      const actDate = dayjs(act.fecha);
+      return actDate.month() === currentMonth && actDate.year() === currentYear;
+    })
+    .map(act => dayjs(act.fecha).format('YYYY-MM-DD'))
+  ).size;
+
+  // Promedio por actividad
+  const avgPerActivity = activities.length > 0 ? totalKm / activities.length : 0;
+
+  // Tiempo promedio por actividad
+  const totalSeconds = activities.reduce((sum, act) => {
+    if(!act.duracion) return sum;
+    const [hours, minutes, seconds] = act.duracion.split(':').map(Number);
+    return sum + (hours * 3600) + (minutes * 60) + (seconds || 0);
+  }, 0);
+  const avgSeconds = activities.length > 0 ? totalSeconds / activities.length : 0;
+  const avgHours = Math.floor(avgSeconds / 3600);
+  const avgMinutes = Math.floor((avgSeconds % 3600) / 60);
+  const avgSecs = Math.floor(avgSeconds % 60);
+  const avgTimePerActivity = `${String(avgHours).padStart(2, '0')}:${String(avgMinutes).padStart(2, '0')}:${String(avgSecs).padStart(2, '0')}`;
+
+  // Racha actual (dias consecutivos)
+  const sortedActivities = [...activities].sort((a, b) =>
+    dayjs(b.fecha).unix() - dayjs(a.fecha).unix());
+  let currentStreak = 0;
+  let lastDate = null;
+  for (const act of sortedActivities) {
+    const actDate = dayjs(act.fecha);
+    if(!lastDate){
+      if (actDate.isSame(dayjs(), 'day') || actDate.isSame(dayjs().subtract(1, 'day'), 'day')) {
+        currentStreak = 1;
+        lastDate = actDate;
+      } else {
+        break;
+      }
+    }
+  }
+ 
+  return {
+    totalKm: totalKm.toFixed(2),
+    totalElevation: totalElevation.toFixed(0),
+    longestActivity: {
+    fecha: dayjs(longestActivity.fecha).format('DD/MM/YYYY'),
+    km: parseFloat(longestActivity.distancia).toFixed(2),
+    elevation: (() => {
+      const ruta = stats.routes?.find(r => r.idRuta === longestActivity.idRuta);
+      return parseFloat(ruta?.desnivel || 0).toFixed(0);
+    })(),
+},
+    fastestActivity: {
+      fecha: dayjs(fastestActivity.fecha).format('DD/MM/YYYY'),
+      avgSpeed: parseFloat(fastestActivity.velocidadMedia).toFixed(2),
+    },
+    activeDaysThisMonth,
+    avgPerActivity: avgPerActivity.toFixed(2),
+    avgTimePerActivity,
+    currentStreak,
   };
+}, [stats.activities]);
 
   return (
     <div style={{ padding: "0px", maxWidth: "1200px", margin: "0 auto", width:"100%"}}>
@@ -345,24 +435,39 @@ function Home() {
               </span>
             }
           >
-            <span style={{ fontWeight: "500" }}>
-              {detailedStats.longestActivity.name}
-            </span>
-            <br />
-            <span style={{ color: "#8c8c8c" }}>
-              {detailedStats.longestActivity.km} km •{" "}
-              {detailedStats.longestActivity.elevation}m desnivel
-            </span>
+            {detailedStats.longestActivity ? (
+              <>
+                <span style={{ fontWeight: "500"}}>
+                  {detailedStats.longestActivity.fecha}
+                </span>
+                <br />
+                <span style={{ color: "#8c8c8c"}}>
+                  {detailedStats.longestActivity.km} km • {detailedStats.longestActivity.elevation}m desnivel
+                </span>
+              </>
+            ) : (
+              <span style={{ color: "#8c8c8c8"}}></span>
+            )}
           </Descriptions.Item>
 
           <Descriptions.Item label={<span>⚡ Actividad Más Rápida</span>}>
-            <span style={{ fontWeight: "500" }}>
-              {detailedStats.fastestActivity.name}
-            </span>
-            <br />
-            <span style={{ color: "#8c8c8c" }}>
-              Velocidad promedio: {detailedStats.fastestActivity.avgSpeed} km/h
-            </span>
+            {detailedStats.fastestActivity ? (
+              <>
+                <span style={{ fontWeight: "500" }}>
+                  {detailedStats.fastestActivity.name}
+                </span>
+                <br />
+                <span style={{ fontWeight: "500" }}>
+                  {detailedStats.fastestActivity.fecha}
+                </span>
+                <br />
+                <span style={{ color: "#8c8c8c" }}>
+                  Velocidad promedio: {detailedStats.fastestActivity.avgSpeed} km/h
+                </span>
+              </>
+            ) : (
+              <span style={{ color: "#8c8c8c"}}>Sin datos</span>
+            )}
           </Descriptions.Item>
 
           <Descriptions.Item label={<span>📅 Días Activos (Este Mes)</span>}>
@@ -387,7 +492,7 @@ function Home() {
             <span
               style={{ fontSize: "16px", fontWeight: "bold", color: "#2f54eb" }}
             >
-              {detailedStats.timePerActivity}
+              {detailedStats.avgTimePerActivity}
             </span>
           </Descriptions.Item>
 
