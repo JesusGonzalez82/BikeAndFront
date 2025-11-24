@@ -13,6 +13,7 @@ import {
   GithubOutlined,
   LinkedinFilled,
   InstagramOutlined,
+  RiseOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import { getProfileImage } from "../services/imageService";
@@ -135,6 +136,10 @@ function Navbar({ showMenuItems = true }) {
 
           <Menu.Item key="/activities" icon={<TrophyOutlined />}>
             <Link to="/activities">Actividades</Link>
+          </Menu.Item>
+
+          <Menu.Item key="/statistics" icon={<RiseOutlined />}>
+            <Link to="/statistics">Estadísticas</Link>
           </Menu.Item>
 
           <Menu.Item key="contact" icon={<MailOutlined />} onClick={showContactModal}>

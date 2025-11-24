@@ -287,7 +287,14 @@ function Activities() {
       : 0;
 
 return (
-    <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)', position: 'relative' }}>
+    <div style={{ 
+        display: 'flex', 
+        width: '100%',
+        maxWidth: '100vw',
+        minHeight: 'calc(100vh - 64px)', 
+        position: 'relative',
+        overflow: 'hidden'
+    }}>
         {/* COLUMNA IZQUIERDA - Lista de actividades */}
         <div
             className={selectedActivity ? 'activities-panel activities-panel-active' : 'activities-panel'}
@@ -513,6 +520,7 @@ return (
                 className="details-panel"
                 style={{
                     flex: '0 0 60%',
+                    maxWidth: "60%",
                     borderLeft: '1px solid #e8e8e8',
                     backgroundColor: '#ffffff',
                     overflowY: 'auto',

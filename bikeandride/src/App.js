@@ -5,8 +5,9 @@ import {
   Route,
   useLocation,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
-import { Layout, App as AntApp } from "antd";
+import { Layout, App as AntApp, Button } from "antd";
 import "./App.css";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
@@ -25,8 +26,38 @@ import Bikes from "./pages/Bikes";
 import RoutesPage from "./pages/Routes";
 import Activities from "./pages/Activities";
 import Profile from "./pages/Profile";
+import Statistics from "./pages/Statistics";
 
 const { Header, Content, Footer } = Layout;
+
+function UnderConstruction() {
+  const navigate = useNavigate();
+  
+  return (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column',
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      width:"100%",
+      height: "100%",
+      minHeight: '60vh',
+      padding: '40px'
+    }}>
+      <div style={{ fontSize: '80px', marginBottom: '20px' }}>🚧</div>
+      <h1 style={{ fontSize: '32px', marginBottom: '16px', color: '#1890ff' }}>
+        En Construcción
+      </h1>
+      <p style={{ fontSize: '16px', color: '#8c8c8c', marginBottom: '32px', textAlign: 'center' }}>
+        Estamos trabajando en esta sección. <br />
+        ¡Pronto estará disponible!
+      </p>
+      <Button type="primary" size="large" onClick={() => navigate('/home')}>
+        Volver al Inicio
+      </Button>
+    </div>
+  );
+}
 
 function LayoutWrapper() {
   const location = useLocation();
@@ -34,9 +65,10 @@ function LayoutWrapper() {
 
   const isLogin = location.pathname === "/login";
   const isRegister = location.pathname === "/register";
+  const isUnderConstruction = location.pathname === "/statistics";
 
   const hideNavbar = isLogin || isRegister;
-  const centerContent = isLogin || isRegister;
+  const centerContent = isLogin || isRegister || isUnderConstruction;
 
   return (
     <Layout
@@ -52,10 +84,10 @@ function LayoutWrapper() {
         style={{
           display: "flex",
           justifyContent: centerContent ? "center" : "flex-start",
-          alignItems: centerContent ? "center" : "flex-start",
+          alignItems:  centerContent ? "center" : "flex-start",
           padding: centerContent ? "0px" : "20px",
           flex: 1,
-          overflow: centerContent ? "hidden" : "auto",
+          overflow: "auto",
           minHeight: 0,
         }}
       >
@@ -120,6 +152,15 @@ function LayoutWrapper() {
             element={
               <ProtectedRoute>
                 <Activities />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/statistics"
+            element={
+              <ProtectedRoute>
+                <UnderConstruction />
               </ProtectedRoute>
             }
           />
