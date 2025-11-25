@@ -19,7 +19,8 @@ function Login() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showReactivate, setShowReactivate] = useState(false);
   const [inactiveEmail, setInactiveEmail] = useState('');
-  const [errorMessage, setErrorMessage] = useState(''); // Mensaje de error local
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Cargar datos guardados
   useEffect(() => {
@@ -296,14 +297,49 @@ const handleReactivate = async () => {
                     { type: "email", message: "Email no válido." },
                   ]}
                 >
-                  <input className="bike-input" placeholder="Email" autoComplete="email" />
+                  <input className="bike-input" type="email" placeholder="Email" autoComplete="email" />
                 </Form.Item>
 
                 <Form.Item
                   name="password"
                   rules={[{ required: true, message: "Por favor, introduce tu contraseña!" }]}
                 >
-                  <input className="bike-input" type="password" placeholder="Contraseña" autoComplete="current-password" />
+                  {/* <input className="bike-input" type="password" placeholder="Contraseña" autoComplete="current-password" /> */}
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      className="bike-input"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Contraseña"
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: "absolute",
+                        right: "24px",
+                        top: "0%",
+                        transform: "tranlateY(-50%)",
+                        border: "none",
+                        background: "transparent",
+                        cursor: "pointer",
+                        fontSize: "18px",
+                        color: "#999",
+                        padding: "0",
+                        width: "24px",
+                        height: "24px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        // opacity: 0.6,
+                        transition: "opacity 0.2s",
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
+                    >
+                      {showPassword ? '👁️' : '🔒'}
+                    </button>
+                  </div>
                 </Form.Item>
 
                 <Form.Item name="remember" valuePropName="checked">
@@ -341,7 +377,18 @@ const handleReactivate = async () => {
               )}
 
               <div className="link-group">
-                <button className="link-btn" type="button" onClick={() => console.log("Forgot password clicked")}>
+                <button 
+                  className="link-btn" 
+                  type="button" 
+                  // onClick={() => 
+                  // console.log("Forgot password clicked")}
+                  style={{
+                    opacity: 0.5,
+                    cursor: 'not-allowed',
+                    pointerEvents: 'none'
+                  }}
+                  title="Funcionalidad en desarrollo"
+                >
                   ¿Olvidaste tu password?
                 </button>
                 <button className="link-btn register" type="button" onClick={() => navigate("/register")}>
