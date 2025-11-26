@@ -40,6 +40,7 @@ import {
   deleteActivity,
   updateActivity,
 } from "../services/activityServices";
+import { getVotacionesByActividad, agregarVoto } from "../services/votacionService";
 import { useActivities } from "../context/ActivityContext";
 import { useBikes } from "../context/BikeContext";
 import { useRoutes } from "../context/RouteContext";
@@ -95,7 +96,29 @@ const styles = `
     .details-panel {
       flex: 0 0 99% !important;
     }
+   /* Hacer visibles las cervezas vacías - Mayor contraste */
+  .ant-rate .ant-rate-star-zero .ant-rate-star-first,
+  .ant-rate .ant-rate-star-zero .ant-rate-star-second {
+    color: rgba(250, 140, 22, 0.5) !important;
+    opacity: 1 !important;
+    filter: grayscale(0.5) !important;
   }
+  
+  .ant-rate .ant-rate-star {
+    font-size: 40px !important;
+  }
+  
+  /* Efecto hover para que se vea que es interactivo */
+  .ant-rate .ant-rate-star:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+  }
+  
+  .beer-rating .ant-rate-star-zero .ant-rate-star-first,
+  .beer-rating .ant-rate-star-zero .ant-rate-star-second {
+    color: rgba(250, 140, 22, 0.25) !important;
+  }
+}
 `;
 
 if (typeof document !== 'undefined') {
@@ -123,8 +146,12 @@ function Activities() {
   const [editingActivity, setEditingActivity] = useState(null);
   const [form] = Form.useForm();
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [userRating, setUserRating] = useState(0);
+  const [avgRating, setAvgRating] = useState(0);
+  const [totalVotes, setTotalVotes] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
+
 
   useEffect(() => {
     fetchActivities();
@@ -170,13 +197,60 @@ function Activities() {
     form.resetFields();
   };
 
-  const handleActivityClick = (activity) => {
+  const handleActivityClick = async (activity) => {
     setSelectedActivity(activity);
+
+    try {
+      const votaciones = await getVotacionesByActividad(activity.idActividad);
+
+      // Calculamos la media de los votos
+      if (votaciones && votaciones.length > 0) {
+        const total = votaciones.reduce((sum, v) => sum + Number(v.numCervezas), 0);
+        const media = total / votaciones.length;
+        setAvgRating(media);
+        setTotalVotes(votaciones.length);
+
+      // Buscamos el voto del usuario actual
+      const user = JSON.parse(localStorage.getItem('user'));
+      const miVoto = votaciones.find(v => v.idUsuario === user.idUser);
+      setUserRating(miVoto ? Number(miVoto.numCervezas) : 0);
+      } else {
+        setAvgRating(0);
+        setTotalVotes(0);
+        setUserRating(0);
+      }
+    } catch (error) {
+      console.error("Error al cargar los votos: ", error);
+      setAvgRating(0);
+      setTotalVotes(0);
+      setUserRating(0);
+    }
   };
 
   const handleDrawerClose = () => {
     setSelectedActivity(null);
   }
+
+  const handleRatingChange = async (value) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+
+      const votacionData = {
+        idActividad: selectedActivity.idActividad,
+        idUsuario: user.idUser,
+        numCervezas: value
+      };
+
+      await agregarVoto(votacionData);
+      setUserRating(value);
+      message.success(`¡Valoracion guardada: ${value} 🍺! ¡SALUD!`);
+
+      handleActivityClick(selectedActivity);
+    } catch (error) {
+      console.error('Error al guardar la valoracion', error);
+      message.error('Errora al guardar la valoracion');
+    }
+  };
 
   const handleSave = async (values) => {
     console.log("🚀 handleSave llamado con:", values);
@@ -440,11 +514,12 @@ return (
                                             alignItems: "center",
                                             color: "white",
                                         }}>
-                                            <div style={{ fontSize: "36px", fontWeight:"bold"}}>
-                                                {parseFloat(activity.distancia).toFixed(2)} km
+                                            <div style={{ fontSize: "24px", fontWeight:"bold"}}>
+                                                Actividad del día {dayjs(activity.fecha).format("DD-MM-YYYY")}
+                                                
                                             </div>
                                             <div style={{ fontSize: "14px", marginTop: "4px"}}>
-                                                {dayjs(activity.fecha).format("DD/MM/YYYY")}
+                                                {parseFloat(activity.distancia).toFixed(2)} km
                                             </div>
                                         </div>
                                     </div>
@@ -651,8 +726,10 @@ return (
                       <title level={4}>¿Como fue la actividad?</title>
                       <Rate
                         allowHalf
-                        defaultValue={5}
-                        style={{ fontSize: 40}}
+                        value={userRating}
+                        onChange={handleRatingChange}
+                        className="beer-rating"
+                        style={{ fontSize: 40 }}
                         character="🍺"
                       />
                       <div style={{ marginTop: "16px "}}>
@@ -660,6 +737,13 @@ return (
                           Valora tu actividad con jarras de cerveza 🍺
                         </Text>
                       </div>
+                      {totalVotes > 0 && (
+                        <div style={{ marginTop: "16px", padding: "12px", backgroundColor: "#fafafa", borderRadius: "8px"}}>
+                          <Text strong style={{ fontSize: "16px", color: "#fa8c16" }}>
+                            Media: {avgRating.toFixed(1)} 🍺
+                          </Text>
+                        </div>
+                      )}
                     </div>
                   </Card>
 

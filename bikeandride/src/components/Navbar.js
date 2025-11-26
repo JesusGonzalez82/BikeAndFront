@@ -15,6 +15,7 @@ import {
   InstagramOutlined,
   RiseOutlined,
   PlusOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import { getProfileImage } from "../services/imageService";
@@ -225,6 +226,7 @@ function Navbar({ showMenuItems = true }) {
               {!profileImageUrl && user.name ? user.name.charAt(0).toUpperCase() : null}
             </Avatar>
             <span style={{ color: "#fff" }}>{user.name || "Usuario"}</span>
+            <DownOutlined style={{ color: "#fff", fontSize: "12px"}} />
           </Space>
         </Dropdown>
       )}
