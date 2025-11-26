@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Card,
   Row,
@@ -33,10 +34,20 @@ function Bikes() {
   const [form] = Form.useForm();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedBike, setSelectedBike] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchBikes();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('action') === 'create') {
+      showAddModal();
+      navigate('/bikes', {replace: true});
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (bikes.length > 0) {
@@ -53,9 +64,9 @@ function Bikes() {
   const showEditModal = (bike) => {
     setEditingBike(bike);
     form.setFieldsValue({
-      tipo_bici: bike.type,
-      anio: parseInt(bike.birthday),
-      // weight: bike.peso ? parseFloat(bike.peso) : null,
+      type: bike.tipo_bici,
+      birthday: bike.anio ? Number(bike.anio) : null,
+      weight: bike.peso ? Number(bike.peso) : null,
       status: bike.status,
     });
     setIsModalOpen(true);

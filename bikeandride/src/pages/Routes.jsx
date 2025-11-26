@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Typography,
   Card,
@@ -35,10 +36,20 @@ function Routes() {
   const [form] = Form.useForm();
   const [drawerVisbile, setDrawerVisible] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchRoutes();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if(params.get('action') === 'create'){
+      showAddModal();
+      navigate('/routes', {replace: true});
+    }
+  }, [location.search]);
 
   const showAddModal = () => {
     setEditingRoute(null);

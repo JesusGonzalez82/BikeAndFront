@@ -1,4 +1,5 @@
 import React, { useState, useEffect, act, use } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Card,
   Row,
@@ -106,6 +107,7 @@ if (typeof document !== 'undefined') {
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+
 function Activities() {
   const {
     activities,
@@ -121,12 +123,22 @@ function Activities() {
   const [editingActivity, setEditingActivity] = useState(null);
   const [form] = Form.useForm();
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchActivities();
     fetchBikes();
     fetchRoutes();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('action') === 'create') {
+      showAddModal();
+      navigate('/activities', { replace: true });
+    }
+  }, [location.search]);
 
   const showAddModal = () => {
     setEditingActivity(null);

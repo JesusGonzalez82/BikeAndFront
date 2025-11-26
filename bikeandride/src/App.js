@@ -27,6 +27,7 @@ import RoutesPage from "./pages/Routes";
 import Activities from "./pages/Activities";
 import Profile from "./pages/Profile";
 import Statistics from "./pages/Statistics";
+//import FloatingAddButton from "./components/FloatingButton";
 
 const { Header, Content, Footer } = Layout;
 
@@ -177,6 +178,8 @@ function LayoutWrapper() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Content>
+
+      {/* {!hideNavbar && <FloatingAddButton />} */}
 
       {(!isLogin && !isRegister) && (
         <Footer style={{ padding: 0, marginTop: "auto" }}>

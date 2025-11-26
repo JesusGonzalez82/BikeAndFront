@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Menu, Avatar, Dropdown, Space, Modal } from "antd"; 
+import { Menu, Avatar, Dropdown, Space, Modal, FloatButton } from "antd"; 
 import { Link, useLocation, useNavigate } from "react-router-dom"; 
 import {
   UserOutlined,
@@ -14,6 +14,7 @@ import {
   LinkedinFilled,
   InstagramOutlined,
   RiseOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import { getProfileImage } from "../services/imageService";
@@ -25,6 +26,27 @@ function Navbar({ showMenuItems = true }) {
   const [isContactModalOpen, setIsContactModalOpen] = React.useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState(null);
   const isHome = location.pathname === '/home';
+
+  const addMenuItems = [
+    {
+      key: "add-bike",
+      icon: <i className="fa-solid fa-bicycle" style={{ fontSize: '14px' }}></i>,
+      label: "Bici nueva",
+      onClick: () => navigate('/bikes?action=create'),
+    },
+    {
+      key: "add-route",
+      icon: <EnvironmentOutlined />,
+      label: "Nueva Ruta",
+      onClick: () => navigate('/routes?action=create'),
+    },
+    {
+      key: "add-activity",
+      icon: <TrophyOutlined />,
+      label: "Nueva Actividad",
+      onClick: () => navigate("/activities?action=create"),
+    },
+  ];
 
   useEffect(() => {
     const loadProfileImage =async () => {
@@ -149,6 +171,42 @@ function Navbar({ showMenuItems = true }) {
           )}
         </Menu>
       )}
+
+      {showMenuItems && user && (
+        <Dropdown
+          menu={{ items: addMenuItems }}
+          placement="bottomRight"
+          trigger={["click"]}
+        >
+          <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              // background: 'linear-gradient(135deg, #fa8c16 0%, #faad14 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              marginRight: '16px',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 2px 8px rgba(250, 140, 22, 0,3)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(250, 140, 22, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(250, 140, 22, 0.3)';
+          }}
+          >
+            <PlusOutlined style={{ fontSize: '20px', color: '#fff'}} />
+          </div>
+        </Dropdown>
+      )}
+
+
+
       {showMenuItems && user && (
         <Dropdown
           menu={{ items: userMenuItems }}
