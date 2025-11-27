@@ -94,3 +94,5 @@ export const loginUser = async (email, password) => {
 
   return await response.json();
 };
+
+export const getUserById = getUserId;

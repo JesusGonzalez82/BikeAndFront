@@ -15,6 +15,29 @@ const getUserId = () => {
     return null;
 };
 
+// GET - Obtenemos todas las actividades
+export const getAllActivities = async() => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await  fetch(`${API_ACTIVITIES}/all`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al obtener todas las actividades');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error: ", error);
+        throw error;
+    }
+};
+
 // GET - Obtenemos todas las actividades de un usuario
 export const getActivities = async () => {
     const userId = getUserId();

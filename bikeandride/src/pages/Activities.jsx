@@ -33,20 +33,32 @@ import {
   ThunderboltOutlined,
   CloseOutlined,
   DashboardOutlined,
+  AppstoreOutlined,
+  UnorderedListOutlined,
 } from "@ant-design/icons";
 import {
   getActivities,
   createActivity,
+  getAllActivities,
   deleteActivity,
   updateActivity,
 } from "../services/activityServices";
-import { getVotacionesByActividad, agregarVoto } from "../services/votacionService";
+import { getUserById } from "../services/userService";
+import {
+  getVotacionesByActividad,
+  agregarVoto,
+} from "../services/votacionService";
 import { useActivities } from "../context/ActivityContext";
 import { useBikes } from "../context/BikeContext";
 import { useRoutes } from "../context/RouteContext";
-import { formatDateForBackend, formatDateToSpanish, formatTimeForBackend } from "../utils/dateUtils";
+import {
+  formatDateForBackend,
+  formatDateToSpanish,
+  formatTimeForBackend,
+} from "../utils/dateUtils";
 import dayjs from "dayjs";
 import CommentSection from "../components/CommentSection";
+import { getComments } from "../services/commentService"
 import ActivityImageCarousel from "../components/ActivityImageCarousel";
 
 const styles = `
@@ -121,7 +133,7 @@ const styles = `
 }
 `;
 
-if (typeof document !== 'undefined') {
+if (typeof document !== "undefined") {
   const styleSheet = document.createElement("style");
   styleSheet.textContent = styles;
   document.head.appendChild(styleSheet);
@@ -129,7 +141,6 @@ if (typeof document !== 'undefined') {
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-
 
 function Activities() {
   const {
@@ -149,21 +160,107 @@ function Activities() {
   const [userRating, setUserRating] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
   const [totalVotes, setTotalVotes] = useState(0);
+  const [viewMode, setViewMode] = useState("mine");
+  const [displayActivities, setDisplayActivities] = useState([]);
+  const [displayMode, setDisplayMode] = useState("cards");
   const location = useLocation();
   const navigate = useNavigate();
 
-
   useEffect(() => {
-    fetchActivities();
+    loadActivities();
     fetchBikes();
     fetchRoutes();
-  }, []);
+  }, [viewMode]);
+
+  const loadActivities = async () => {
+    if (viewMode === "mine") {
+      await fetchActivities();
+      setDisplayActivities(activities);
+    } else {
+      try {
+        const allActivities = await getAllActivities();
+
+        // Obtenemos IDs únicos de usuarios
+        const userIds = [...new Set(allActivities.map((act) => act.idUsuario))];
+
+        // Cargamos datos de usuarios
+        const usersData = await Promise.all(
+          userIds.map(async (id) => {
+            const user = await getUserById(id);
+            return { id, name: user?.name || "Usuario desconocido" };
+          })
+        );
+
+        // Creaamos mapa de usuarios
+        const usersMap = {};
+        usersData.forEach((user) => {
+          usersMap[user.id] = user.name;
+        });
+
+        // Cargamos votaciones de cada actividad y calcular media
+        const activitiesWithData = await Promise.all(
+          allActivities.map(async (act) => {
+            try {
+              const votaciones = await getVotacionesByActividad(
+                act.idActividad
+              );
+              let avgBeers = 0;
+
+              if (votaciones && votaciones.length > 0) {
+                const total = votaciones.reduce(
+                  (sum, v) => sum + Number(v.numCervezas),
+                  0
+                );
+                avgBeers = total / votaciones.length;
+              }
+
+              // Cargamos los comentario
+              const comentarios = await getComments(
+                act.idActividad
+              );
+
+              return {
+                ...act,
+                userName: usersMap[act.idUsuario] || "Usuario desconocido",
+                avgBeers: avgBeers,
+                totalVotes: votaciones?.length || 0,
+                totalComments: comentarios?.length || 0,
+              };
+            } catch (error) {
+              return {
+                ...act,
+                userName: usersMap[act.idUsuario] || "Usuario desconocido",
+                avgBeers: 0,
+                totalVotes: 0,
+                totalComments: 0,
+              };
+            }
+          })
+        );
+
+        setDisplayActivities(activitiesWithData);
+        console.log(
+          "Actividades con usuarios y votaciones: ",
+          activitiesWithData
+        );
+      } catch (error) {
+        console.error("Error al cargar todas las actividades: ", error);
+        message.error("Error al cargar las actividades públicas");
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (viewMode === "mine") {
+      setDisplayActivities(activities);
+    }
+  }, [activities]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get('action') === 'create') {
+    if (params.get("action") === "create") {
       showAddModal();
-      navigate('/activities', { replace: true });
+      navigate("/activities", { replace: true });
     }
   }, [location.search]);
 
@@ -205,15 +302,18 @@ function Activities() {
 
       // Calculamos la media de los votos
       if (votaciones && votaciones.length > 0) {
-        const total = votaciones.reduce((sum, v) => sum + Number(v.numCervezas), 0);
+        const total = votaciones.reduce(
+          (sum, v) => sum + Number(v.numCervezas),
+          0
+        );
         const media = total / votaciones.length;
         setAvgRating(media);
         setTotalVotes(votaciones.length);
 
-      // Buscamos el voto del usuario actual
-      const user = JSON.parse(localStorage.getItem('user'));
-      const miVoto = votaciones.find(v => v.idUsuario === user.idUser);
-      setUserRating(miVoto ? Number(miVoto.numCervezas) : 0);
+        // Buscamos el voto del usuario actual
+        const user = JSON.parse(localStorage.getItem("user"));
+        const miVoto = votaciones.find((v) => v.idUsuario === user.idUser);
+        setUserRating(miVoto ? Number(miVoto.numCervezas) : 0);
       } else {
         setAvgRating(0);
         setTotalVotes(0);
@@ -229,16 +329,16 @@ function Activities() {
 
   const handleDrawerClose = () => {
     setSelectedActivity(null);
-  }
+  };
 
   const handleRatingChange = async (value) => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
+      const user = JSON.parse(localStorage.getItem("user"));
 
       const votacionData = {
         idActividad: selectedActivity.idActividad,
         idUsuario: user.idUser,
-        numCervezas: value
+        numCervezas: value,
       };
 
       await agregarVoto(votacionData);
@@ -247,8 +347,8 @@ function Activities() {
 
       handleActivityClick(selectedActivity);
     } catch (error) {
-      console.error('Error al guardar la valoracion', error);
-      message.error('Errora al guardar la valoracion');
+      console.error("Error al guardar la valoracion", error);
+      message.error("Errora al guardar la valoracion");
     }
   };
 
@@ -372,542 +472,817 @@ function Activities() {
         ).toFixed(1)
       : 0;
 
-return (
-    <div style={{ 
-        display: 'flex', 
-        width: '100%',
-        maxWidth: '100vw',
-        minHeight: 'calc(100vh - 64px)', 
-        position: 'relative',
-        overflow: 'hidden'
-    }}>
-        {/* COLUMNA IZQUIERDA - Lista de actividades */}
+  return (
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        maxWidth: "100vw",
+        minHeight: "calc(100vh - 64px)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* COLUMNA IZQUIERDA - Lista de actividades */}
+      <div
+        className={
+          selectedActivity
+            ? "activities-panel activities-panel-active"
+            : "activities-panel"
+        }
+        style={{
+          flex: selectedActivity ? "0 0 40%" : "1",
+          transition: "flex 0.3s ease",
+          padding: "24px",
+          overflowY: "auto",
+          maxHeight: "calc(100vh - 64px)",
+        }}
+      >
         <div
-            className={selectedActivity ? 'activities-panel activities-panel-active' : 'activities-panel'}
-            style={{ 
-                flex: selectedActivity ? '0 0 40%' : '1',
-                transition: 'flex 0.3s ease',
-                padding: '24px',
-                overflowY: 'auto',
-                maxHeight: 'calc(100vh - 64px)',
-            }}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "24px",
+            gap: "24px",
+          }}
         >
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "32px",
-                    gap: "24px",
-                }}
-            >
-                <Title level={2}>
-                    <TrophyOutlined style={{ marginRight: "12px", color: "#fa8c16"}} />
-                    Mis Actividades
-                </Title>
-                <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    size="large"
-                    onClick={showAddModal}
-                    style={{ backgroundColor: "#fa8c16", borderColor: "#fa8c16"}}
-                >
-                    Registrar Actividad
-                </Button>
-            </div>
-
-            {/* Resumen de estadisticas */}
-            {!loading && activities.length > 0 &&(
-                <Row gutter={16} style={{ marginBottom: "32px" }}>
-                    <Col xs={24} sm={8}>
-                        <Card>
-                            <Statistic
-                                title="Total Actividades"
-                                value={totalActivities}
-                                prefix={<TrophyOutlined />}
-                                valueStyle={{ color: "#fa8c16" }}
-                            />
-                        </Card>
-                    </Col>
-                    <Col xs={24} sm={8}>
-                        <Card>
-                            <Statistic
-                                title="Distancia Total"
-                                value={totalDistance.toFixed(2)}
-                                suffix="km"
-                                prefix={<FireOutlined />}
-                                valueStyle={{ color: "#52c41a" }}
-                            />
-                        </Card>
-                    </Col>
-                    <Col xs={24} sm={8}>
-                        <Card>
-                            <Statistic
-                                title="Velocidad Media"
-                                value={avgSpeed}
-                                suffix="km/h"
-                                prefix={<ThunderboltOutlined />}
-                                valueStyle={{ color: "#1890ff" }}
-                            />
-                        </Card>
-                    </Col>
-                </Row>
-            )}
-
-            {loading && (
-                <div style={{ textAlign: "center", padding: "100px 50px" }}>
-                    <Spin size="large" />
-                    <div style={{ marginTop: "16px"}}>
-                        <Text type="secondary">Cargando tus actividades...</Text>
-                    </div>
-                </div>
-            )}
-
-            {!loading && activities.length === 0 && (
-                <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description={
-                        <span>
-                            No tienes ninguna Actividad aún!
-                            <br />
-                            Registra tu primera actividad
-                        </span>
-                    }
-                    style={{ padding: "50px" }}
-                >
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={showAddModal}
-                        style={{ backgroundColor: "#fa8c16", borderColor: "#fa8c16"}}
-                    >
-                        Registrar Primera Actividad
-                    </Button>
-                </Empty>
-            )}
-
-            {!loading && activities.length > 0 && (
-                <Row gutter={[16, 16]}>
-                    {activities.map((activity) => (
-                        <Col xs={24} sm={12} lg={selectedActivity ? 24 : 12} key={activity.idActividad}>
-                            <Card
-                                hoverable
-                                style={{ 
-                                    height: "100%",
-                                    border: selectedActivity?.idActividad === activity.idActividad 
-                                        ? '2px solid #fa8c16' 
-                                        : '1px solid #f0f0f0'
-                                }}
-                                cover={
-                                    <div 
-                                        style={{
-                                            cursor: "pointer"
-                                        }}
-                                        onClick={() => handleActivityClick(activity)}
-                                    >
-                                        <div style={{
-                                            height: "120px",
-                                            background: "linear-gradient(135deg, #fa8c16 0%, #faad14 100%)",
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            justifyContent: "center",
-                                            alignItems: "center",
-                                            color: "white",
-                                        }}>
-                                            <div style={{ fontSize: "24px", fontWeight:"bold"}}>
-                                                Actividad del día {dayjs(activity.fecha).format("DD-MM-YYYY")}
-                                                
-                                            </div>
-                                            <div style={{ fontSize: "14px", marginTop: "4px"}}>
-                                                {parseFloat(activity.distancia).toFixed(2)} km
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                                actions={[
-                                    <Button
-                                        key="edit"
-                                        type="text"
-                                        icon={<EditOutlined />}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            showEditModal(activity);
-                                        }}
-                                    >
-                                        Editar
-                                    </Button>,
-                                    <Popconfirm
-                                        key="delete"
-                                        title="¿Eliminar actividad?"
-                                        description="Esta acción no se puede deshacer"
-                                        onConfirm={(e) => {
-                                            e?.stopPropagation();
-                                            handleDelete(activity.idActividad);
-                                        }}
-                                        okText="Si, eliminar"
-                                        cancelText="Cancelar"
-                                        okButtonProps={{ danger: true}}
-                                    >
-                                        <Button 
-                                            type="text" 
-                                            danger 
-                                            icon={<DeleteOutlined />}
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            Eliminar
-                                        </Button>
-                                    </Popconfirm>,
-                                ]}
-                            >
-                                <div style={{ marginBottom: "12px"}}>
-                                    <ClockCircleOutlined style={{ marginRight: "8px"}} />
-                                    <Text strong>Velocidad:</Text>{" "}
-                                    {parseFloat(activity.velocidadMedia).toFixed(2)} km/h
-                                </div>
-
-                                <div style={{ marginBottom: "12px"}}>
-                                    <ThunderboltOutlined style={{ marginRight: "8px"}} />
-                                    <Text strong>Duracion: </Text>{" "}
-                                    {formatDuration(activity.duracion)}
-                                </div>
-
-                                <div style={{ marginBottom: "12px"}}>
-                                    <Text strong>Ritmo:</Text>{" "}
-                                    {calculatePace(activity.distancia, activity.duracion)}
-                                </div>
-
-                                {activity.idBici && (
-                                    <div style={{ marginBottom: "8px"}}>
-                                        <Tag color="blue">🚴 {getBikeName(activity.idBici)}</Tag>
-                                    </div>
-                                )}
-
-                                {activity.idRuta && (
-                                    <div style={{ marginBottom: "8px"}}>
-                                        <Tag color="green">🗺️ {getRouteName(activity.idRuta)}</Tag>
-                                    </div>
-                                )}
-
-                                {activity.calorias && (
-                                    <div style={{ marginTop: "8px", fontSize: "12px"}}>
-                                        <FireOutlined style={{ color: "#ff4d4f"}} />{" "}
-                                        {parseFloat(activity.calorias).toFixed(0)} kcal
-                                    </div>
-                                )}
-                            </Card>
-                        </Col>
-                    ))}
-                </Row>
-            )}
+          <Title level={2}>
+            <TrophyOutlined style={{ marginRight: "12px", color: "#fa8c16" }} />
+            Actividades
+          </Title>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            size="large"
+            onClick={showAddModal}
+            style={{ backgroundColor: "#fa8c16", borderColor: "#fa8c16" }}
+          >
+            Registrar Actividad
+          </Button>
         </div>
 
-        {/* COLUMNA DERECHA - Panel de detalles */}
-        {selectedActivity && (
-            <div
-                className="details-panel"
-                style={{
-                    flex: '0 0 60%',
-                    maxWidth: "60%",
-                    borderLeft: '1px solid #e8e8e8',
-                    backgroundColor: '#ffffff',
-                    overflowY: 'auto',
-                    maxHeight: 'calc(100vh - 64px)',
-                    animation: 'slideIn 0.3s ease',
-                    boxShadow: '-2px 0 8px rgba(0,0,0,0.1)',
-                }}
+        {/* Selector Mis actividades / Todas */}
+        <div
+          style={{
+            marginBottom: "24px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "16px",
+          }}
+        >
+          <Select
+            value={viewMode}
+            onChange={setViewMode}
+            style={{ width: 200 }}
+            size="large"
+          >
+            <Option value="mine">🏠 Mis Actividades</Option>
+            <Option value="all">🌍 Todas las Actividades</Option>
+          </Select>
+
+          <Space>
+            <Button
+              type={displayMode === "cards" ? "primary" : "default"}
+              icon={<AppstoreOutlined />}
+              onClick={() => setDisplayMode("cards")}
+            ></Button>
+            <Button
+              type={displayMode === "list" ? "primary" : "default"}
+              icon={<UnorderedListOutlined />}
+              onClick={() => setDisplayMode("list")}
+            ></Button>
+          </Space>
+        </div>
+
+        {/* Resumen de estadisticas */}
+        {!loading && displayActivities.length > 0 && (
+          <Row gutter={16} style={{ marginBottom: "32px" }}>
+            <Col xs={24} sm={8}>
+              <Card>
+                <Statistic
+                  title="Total Actividades"
+                  value={totalActivities}
+                  prefix={<TrophyOutlined />}
+                  valueStyle={{ color: "#fa8c16" }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={8}>
+              <Card>
+                <Statistic
+                  title="Distancia Total"
+                  value={totalDistance.toFixed(2)}
+                  suffix="km"
+                  prefix={<FireOutlined />}
+                  valueStyle={{ color: "#52c41a" }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={8}>
+              <Card>
+                <Statistic
+                  title="Velocidad Media"
+                  value={avgSpeed}
+                  suffix="km/h"
+                  prefix={<ThunderboltOutlined />}
+                  valueStyle={{ color: "#1890ff" }}
+                />
+              </Card>
+            </Col>
+          </Row>
+        )}
+
+        {loading && (
+          <div style={{ textAlign: "center", padding: "100px 50px" }}>
+            <Spin size="large" />
+            <div style={{ marginTop: "16px" }}>
+              <Text type="secondary">Cargando tus actividades...</Text>
+            </div>
+          </div>
+        )}
+
+        {!loading && displayActivities.length === 0 && (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <span>
+                No tienes ninguna Actividad aún!
+                <br />
+                Registra tu primera actividad
+              </span>
+            }
+            style={{ padding: "50px" }}
+          >
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={showAddModal}
+              style={{ backgroundColor: "#fa8c16", borderColor: "#fa8c16" }}
             >
-                <div style={{ padding: '16px', borderBottom: '1px solid #f0f0f0', backgroundColor: '#fafafa' }}>
-                    <Button 
-                        icon={<CloseOutlined />} 
-                        onClick={() => setSelectedActivity(null)}
-                        style={{ float: 'right' }}
+              Registrar Primera Actividad
+            </Button>
+          </Empty>
+        )}
+
+        {!loading && displayActivities.length > 0 && (
+          <>
+            {displayMode === "cards" ? (
+              // VISTA DE TARJETAS
+              <Row gutter={[16, 16]}>
+                {displayActivities.map((activity) => (
+                  <Col
+                    xs={24}
+                    sm={12}
+                    lg={selectedActivity ? 24 : 12}
+                    key={activity.idActividad}
+                  >
+                    <Card
+                      hoverable
+                      style={{
+                        height: "100%",
+                        border:
+                          selectedActivity?.idActividad === activity.idActividad
+                            ? "2px solid #fa8c16"
+                            : "1px solid #f0f0f0",
+                      }}
+                      cover={
+                        <div
+                          style={{
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleActivityClick(activity)}
+                        >
+                          <div
+                            style={{
+                              height: "140px",
+                              background:
+                                "linear-gradient(135deg, #fa8c16 0%, #faad14 100%)",
+                              display: "flex",
+                              flexDirection: "column",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              color: "white",
+                              padding: "12px",
+                            }}
+                          >
+                            {viewMode === "all" && activity.userName && (
+                              <div
+                                style={{
+                                  fontSize: "13px",
+                                  marginBottom: "8px",
+                                  opacity: 0.95,
+                                  fontWeight: "500",
+                                }}
+                              >
+                                👤 {activity.userName}
+                              </div>
+                            )}
+                            <div
+                              style={{
+                                fontSize: "18px",
+                                fontWeight: "bold",
+                                marginBottom: "4px",
+                              }}
+                            >
+                              Actividad del{" "}
+                              {dayjs(activity.fecha).format("DD-MM-YYYY")}
+                            </div>
+                            <div style={{ fontSize: "16px", marginTop: "4px" }}>
+                              {parseFloat(activity.distancia).toFixed(2)} km
+                            </div>
+                            {viewMode === "all" && (
+                              <div
+                                style={{
+                                  fontSize: "12px",
+                                  marginTop: "6px",
+                                  opacity: 0.9,
+                                  display: "flex",
+                                  gap: "12px",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                {activity.totalVotes > 0 && (
+                                  <span>🍺 {activity.avgBeers.toFixed(1)}</span>
+                                )}
+                                {activity.totalComments > 0 && (
+                                  <span>💬 {activity.totalComments}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      }
+                      actions={[
+                        <Button
+                          key="edit"
+                          type="text"
+                          icon={<EditOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            showEditModal(activity);
+                          }}
+                        >
+                          Editar
+                        </Button>,
+                        <Popconfirm
+                          key="delete"
+                          title="¿Eliminar actividad?"
+                          description="Esta acción no se puede deshacer"
+                          onConfirm={(e) => {
+                            e?.stopPropagation();
+                            handleDelete(activity.idActividad);
+                          }}
+                          okText="Si, eliminar"
+                          cancelText="Cancelar"
+                          okButtonProps={{ danger: true }}
+                        >
+                          <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Eliminar
+                          </Button>
+                        </Popconfirm>,
+                      ]}
                     >
-                        Cerrar
-                    </Button>
-                    <Title level={4} style={{ margin: 0, paddingTop: '4px' }}>
-                        Detalles de la actividad
-                    </Title>
-                </div>
-                {/* Caarousel de imagenes */}
-                <ActivityImageCarousel activityId={selectedActivity.idActividad} />
-                {/* IInformacíón de la Actividad */}
-                <div style={{ padding: "0 24px 24px "}}>
-                  <Title level={4}>
-                    {selectedActivity.fecha ? formatDateToSpanish (selectedActivity.fecha) : ""}
-                  </Title>
-                  <Text type="secondary" style={{ fontSize: "18px", display: "block", marginBottom: "24px"}}>
-                    {selectedActivity.distancia ? `${parseFloat(selectedActivity.distancia).toFixed(2)} km` : "N/A"} · {formatDuration(selectedActivity.duracion)}
-                  </Text>
-
-                  <Row gutter={[16, 16]} style={{ marginBottom: "24px"}}>
-                    <Col span={12}>
-                      <Card size="small">
-                        <Space direction="vertical" size={0}>
-                          <Text type="secondary">
-                            <ClockCircleOutlined /> Duración
-                          </Text>
-                          <Text strong style={{ fontSize: "16px"}}>
-                            {formatDuration(selectedActivity.duracion)}
-                          </Text>
-                        </Space>
-                      </Card>
-                    </Col>
-
-                    <Col span={12}>
-                      <Card size="small">
-                        <Space direction="vertical" size={0}>
-                          <Text type="secondary">
-                            <DashboardOutlined /> Velocidad Media
-                          </Text>
-                          <Text strong style={{ fontSize: "16px" }}>
-                            {parseFloat(selectedActivity.velocidadMedia).toFixed(1)} km/h
-                          </Text>
-                        </Space>
-                      </Card>
-                    </Col>
-
-                    <Col span={12}>
-                      <Card size="small">
-                        <Space direction="vertical" size={0}>
-                          <Text type="secondary">
-                            <ThunderboltOutlined /> Ritmo
-                          </Text>
-                          <Text strong style={{ fontSize: "16px" }}>
-                            {calculatePace(selectedActivity.distancia, selectedActivity.duracion)}
-                          </Text>
-                        </Space>
-                      </Card>
-                    </Col>
-
-                    <Col span={12}>
-                      <Card size="small">
-                        <Space direction="vertical" size={0}>
-                          <Text type="secondary">
-                            <FireOutlined /> Calorias
-                          <Text strong style={{ fontSize: "16px" }}>
-                            {selectedActivity.calorias ? parseFloat(selectedActivity.calorias).toFixed(0) : "N/A"} kcal
-                          </Text>
-                          </Text>
-                        </Space>
-                      </Card>
-                    </Col>
-                  </Row>
-
-                  {/* Velocidad Maxima y otros datos */}
-                  <Card size="small" style={{ marginBottom: "16px"}}>
-                    <div style={{ marginBottom: "8px" }}>
-                      <Text type="secondary">⚡ Velocidad Máxima: </Text>
-                      <Text strong>{parseFloat(selectedActivity.velocidadMax).toFixed(2)}</Text> km/h
-                    </div>
-                    {selectedActivity.bike_name && (
-                      <div style={{ marginBottom: "8px" }}>
-                        <Text type="secondary">🚴 Bici: </Text>
-                        <Text strong>{selectedActivity.bike_name}</Text>
+                      <div style={{ marginBottom: "12px" }}>
+                        <ClockCircleOutlined style={{ marginRight: "8px" }} />
+                        <Text strong>Velocidad:</Text>{" "}
+                        {parseFloat(activity.velocidadMedia).toFixed(2)} km/h
                       </div>
-                    )}
-                    {selectedActivity.route_name && (
-                      <div>
-                        <Text type="secondary">🗺️ Ruta: </Text>
-                        <Text strong>{selectedActivity.route_name}</Text>
+
+                      <div style={{ marginBottom: "12px" }}>
+                        <ThunderboltOutlined style={{ marginRight: "8px" }} />
+                        <Text strong>Duracion: </Text>{" "}
+                        {formatDuration(activity.duracion)}
                       </div>
-                    )}
-                  </Card>
 
-                  <Divider />
+                      <div style={{ marginBottom: "12px" }}>
+                        <Text strong>Ritmo:</Text>{" "}
+                        {calculatePace(activity.distancia, activity.duracion)}
+                      </div>
 
-                  {/* Comentarios */}
-                  <CommentSection activityId={selectedActivity.idActividad} />
+                      {activity.idBici && (
+                        <div style={{ marginBottom: "8px" }}>
+                          <Tag color="blue">
+                            🚴 {getBikeName(activity.idBici)}
+                          </Tag>
+                        </div>
+                      )}
 
-                  <Divider />
+                      {activity.idRuta && (
+                        <div style={{ marginBottom: "8px" }}>
+                          <Tag color="green">
+                            🗺️ {getRouteName(activity.idRuta)}
+                          </Tag>
+                        </div>
+                      )}
 
-                  {/* Valoración Cervecil */}
-                  <Card style={{ marginTop: "16px"}}>
-                    <div style={{ textAlign: "center" }}>
-                      <title level={4}>¿Como fue la actividad?</title>
-                      <Rate
-                        allowHalf
-                        value={userRating}
-                        onChange={handleRatingChange}
-                        className="beer-rating"
-                        style={{ fontSize: 40 }}
-                        character="🍺"
-                      />
-                      <div style={{ marginTop: "16px "}}>
-                        <Text type="secondary">
-                          Valora tu actividad con jarras de cerveza 🍺
+                      {activity.calorias && (
+                        <div style={{ marginTop: "8px", fontSize: "12px" }}>
+                          <FireOutlined style={{ color: "#ff4d4f" }} />{" "}
+                          {parseFloat(activity.calorias).toFixed(0)} kcal
+                        </div>
+                      )}
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            ) : (
+              // VISTA DE LISTA
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                {displayActivities.map((activity) => (
+                  <Card
+                    key={activity.idActividad}
+                    hoverable
+                    style={{
+                      cursor: "pointer",
+                      border:
+                        selectedActivity?.idActividad === activity.idActividad
+                          ? "2px solid #fa8c16"
+                          : "1px solid #f0f0f0",
+                    }}
+                    onClick={() => handleActivityClick(activity)}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      {/* Fecha e icono */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          minWidth: "150px",
+                        }}
+                      >
+                        <TrophyOutlined
+                          style={{
+                            fontSize: "24px",
+                            color: "#fa8c16",
+                            marginRight: "12px",
+                          }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: "bold" }}>
+                            {dayjs(activity.fecha).format("DD/MM/YYYY")}
+                          </div>
+                          {viewMode === "all" && activity.userName && (
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              👤 {activity.userName}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Distancia */}
+                      <div style={{ textAlign: "center", minWidth: "100px" }}>
+                        <ClockCircleOutlined style={{ marginRight: "4px" }} />
+                        <Text strong>{formatDuration(activity.duracion)}</Text>
+                      </div>
+
+                      {/* Duración */}
+                      <div style={{ textAlign: "center", minWidth: "100px" }}>
+                        <ThunderboltOutlined style={{ marginRight: "4px" }} />
+                        <Text strong>
+                          {parseFloat(activity.velocidadMedia).toFixed(1)} km/h
                         </Text>
                       </div>
-                      {totalVotes > 0 && (
-                        <div style={{ marginTop: "16px", padding: "12px", backgroundColor: "#fafafa", borderRadius: "8px"}}>
-                          <Text strong style={{ fontSize: "16px", color: "#fa8c16" }}>
-                            Media: {avgRating.toFixed(1)} 🍺
+
+                      {/* Calorías */}
+                      {activity.calorias && (
+                        <div style={{ textAlign: "center", minWidth: "100px" }}>
+                          <FireOutlined
+                            style={{ marginRight: "4px", color: "#ff4d4f" }}
+                          />
+                          <Text>
+                            {parseFloat(activity.calorias).toFixed(0)} kcal
                           </Text>
+                        </div>
+                      )}
+
+                      {/* Distancia destacada */}
+                      <div
+                        style={{
+                          fontSize: "20px",
+                          fontWeight: "bold",
+                          color: "#fa8c16",
+                          minWidth: "100px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {parseFloat(activity.distancia).toFixed(2)} km
+                      </div>
+
+                      {/* Votaciones y Comentarios */}
+                      {viewMode === "all" && (
+                        <div
+                          style={{
+                            textAlign: "center",
+                            minWidth: "100px",
+                            fontSize: "14px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px",
+                          }}
+                        >
+                          <div>
+                            {activity.totalVotes > 0 ? (
+                              <>
+                                🍺 {activity.avgBeers.toFixed(1)}
+                                <span
+                                  style={{
+                                    fontSize: "11px",
+                                    color: "#999",
+                                    marginLeft: "4px",
+                                  }}
+                                >
+                                  ({activity.totalVotes})
+                                </span>
+                              </>
+                            ) : (
+                              <span style={{ color: "#ccc" }}>🍺 -</span>
+                            )}
+                          </div>
+                          <div>
+                            {activity.totalComments > 0 ? (
+                              <>💬 {activity.totalComments}</>
+                            ) : (
+                              <span style={{ color: "#ccc" }}>💬 0</span>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
                   </Card>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+        </div>
 
-                </div>
+        {/* COLUMNA DERECHA - Panel de detalles */}
+        {selectedActivity && (
+          <div
+            className="details-panel"
+            style={{
+              flex: "0 0 60%",
+              maxWidth: "60%",
+              borderLeft: "1px solid #e8e8e8",
+              backgroundColor: "#ffffff",
+              overflowY: "auto",
+              maxHeight: "calc(100vh - 64px)",
+              animation: "slideIn 0.3s ease",
+              boxShadow: "-2px 0 8px rgba(0,0,0,0.1)",
+            }}
+          >
+            <div
+              style={{
+                padding: "16px",
+                borderBottom: "1px solid #f0f0f0",
+                backgroundColor: "#fafafa",
+              }}
+            >
+              <Button
+                icon={<CloseOutlined />}
+                onClick={() => setSelectedActivity(null)}
+                style={{ float: "right" }}
+              >
+                Cerrar
+              </Button>
+              <Title level={4} style={{ margin: 0, paddingTop: "4px" }}>
+                Detalles de la actividad
+              </Title>
             </div>
+            {/* Caarousel de imagenes */}
+            <ActivityImageCarousel activityId={selectedActivity.idActividad} />
+            {/* IInformacíón de la Actividad */}
+            <div style={{ padding: "0 24px 24px " }}>
+              <Title level={4}>
+                {selectedActivity.fecha
+                  ? formatDateToSpanish(selectedActivity.fecha)
+                  : ""}
+              </Title>
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: "18px",
+                  display: "block",
+                  marginBottom: "24px",
+                }}
+              >
+                {selectedActivity.distancia
+                  ? `${parseFloat(selectedActivity.distancia).toFixed(2)} km`
+                  : "N/A"}{" "}
+                · {formatDuration(selectedActivity.duracion)}
+              </Text>
+
+              <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
+                <Col span={12}>
+                  <Card size="small">
+                    <Space direction="vertical" size={0}>
+                      <Text type="secondary">
+                        <ClockCircleOutlined /> Duración
+                      </Text>
+                      <Text strong style={{ fontSize: "16px" }}>
+                        {formatDuration(selectedActivity.duracion)}
+                      </Text>
+                    </Space>
+                  </Card>
+                </Col>
+
+                <Col span={12}>
+                  <Card size="small">
+                    <Space direction="vertical" size={0}>
+                      <Text type="secondary">
+                        <DashboardOutlined /> Velocidad Media
+                      </Text>
+                      <Text strong style={{ fontSize: "16px" }}>
+                        {parseFloat(selectedActivity.velocidadMedia).toFixed(1)}{" "}
+                        km/h
+                      </Text>
+                    </Space>
+                  </Card>
+                </Col>
+
+                <Col span={12}>
+                  <Card size="small">
+                    <Space direction="vertical" size={0}>
+                      <Text type="secondary">
+                        <ThunderboltOutlined /> Ritmo
+                      </Text>
+                      <Text strong style={{ fontSize: "16px" }}>
+                        {calculatePace(
+                          selectedActivity.distancia,
+                          selectedActivity.duracion
+                        )}
+                      </Text>
+                    </Space>
+                  </Card>
+                </Col>
+
+                <Col span={12}>
+                  <Card size="small">
+                    <Space direction="vertical" size={0}>
+                      <Text type="secondary">
+                        <FireOutlined /> Calorias
+                        <Text strong style={{ fontSize: "16px" }}>
+                          {selectedActivity.calorias
+                            ? parseFloat(selectedActivity.calorias).toFixed(0)
+                            : "N/A"}{" "}
+                          kcal
+                        </Text>
+                      </Text>
+                    </Space>
+                  </Card>
+                </Col>
+              </Row>
+
+              {/* Velocidad Maxima y otros datos */}
+              <Card size="small" style={{ marginBottom: "16px" }}>
+                <div style={{ marginBottom: "8px" }}>
+                  <Text type="secondary">⚡ Velocidad Máxima: </Text>
+                  <Text strong>
+                    {parseFloat(selectedActivity.velocidadMax).toFixed(2)}
+                  </Text>{" "}
+                  km/h
+                </div>
+                {selectedActivity.bike_name && (
+                  <div style={{ marginBottom: "8px" }}>
+                    <Text type="secondary">🚴 Bici: </Text>
+                    <Text strong>{selectedActivity.bike_name}</Text>
+                  </div>
+                )}
+                {selectedActivity.route_name && (
+                  <div>
+                    <Text type="secondary">🗺️ Ruta: </Text>
+                    <Text strong>{selectedActivity.route_name}</Text>
+                  </div>
+                )}
+              </Card>
+
+              <Divider />
+
+              {/* Comentarios */}
+              <CommentSection activityId={selectedActivity.idActividad} />
+
+              <Divider />
+
+              {/* Valoración Cervecil */}
+              <Card style={{ marginTop: "16px" }}>
+                <div style={{ textAlign: "center" }}>
+                  <title level={4}>¿Como fue la actividad?</title>
+                  <Rate
+                    allowHalf
+                    value={userRating}
+                    onChange={handleRatingChange}
+                    className="beer-rating"
+                    style={{ fontSize: 40 }}
+                    character="🍺"
+                  />
+                  <div style={{ marginTop: "16px " }}>
+                    <Text type="secondary">
+                      Valora tu actividad con jarras de cerveza 🍺
+                    </Text>
+                  </div>
+                  {totalVotes > 0 && (
+                    <div
+                      style={{
+                        marginTop: "16px",
+                        padding: "12px",
+                        backgroundColor: "#fafafa",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <Text
+                        strong
+                        style={{ fontSize: "16px", color: "#fa8c16" }}
+                      >
+                        Media: {avgRating.toFixed(1)} 🍺
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          </div>
         )}
 
-      <Modal
-        title={
-          <span style={{ fontSize: "20px", fontWeight: "bold" }}>
-            <TrophyOutlined style={{ marginRight: "8px", color: "#fa8c16" }} />
-            {editingActivity ? "Editar Actividad" : "Registrar Actividad"}
-          </span>
-        }
-        open={isModalOpen}
-        onCancel={handleCancel}
-        footer={null}
-        width={700}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-          style={{ marginTop: "24px" }}
+        <Modal
+          title={
+            <span style={{ fontSize: "20px", fontWeight: "bold" }}>
+              <TrophyOutlined
+                style={{ marginRight: "8px", color: "#fa8c16" }}
+              />
+              {editingActivity ? "Editar Actividad" : "Registrar Actividad"}
+            </span>
+          }
+          open={isModalOpen}
+          onCancel={handleCancel}
+          footer={null}
+          width={700}
         >
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Fecha"
-                name="fecha"
-                rules={[{ required: true, message: "Selecciona la fecha" }]}
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSave}
+            style={{ marginTop: "24px" }}
+          >
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="Fecha"
+                  name="fecha"
+                  rules={[{ required: true, message: "Selecciona la fecha" }]}
+                >
+                  <DatePicker
+                    style={{ width: "100%" }}
+                    format="DD/MM/YYYY"
+                    placeholder="Selecciona la fecha"
+                  />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item
+                  label="Duración"
+                  name="duracion"
+                  rules={[{ required: true, message: "Introduce la duración" }]}
+                >
+                  <TimePicker
+                    style={{ width: "100%" }}
+                    format="HH:mm:ss"
+                    placeholder="HH:MM:SS"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="Distancia (km)"
+                  name="distancia"
+                  rules={[{ required: true, message: "Ingresa la distancia" }]}
+                >
+                  <InputNumber
+                    placeholder="45.5"
+                    style={{ width: "100%" }}
+                    min={0}
+                    step={0.1}
+                    precision={2}
+                  />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item label="Calorias" name="calorias">
+                  <InputNumber
+                    placeholder="850"
+                    style={{ width: "100%" }}
+                    min={0}
+                    step={1}
+                    precision={0}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="Velocidad Media (km/h)"
+                  name="velocidadMedia"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Ingresa la velocidad media",
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    placeholder="25.5"
+                    style={{ width: "100%" }}
+                    min={0}
+                    step={0.1}
+                    precision={2}
+                  />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item
+                  label="Velocidad Maxima (km/h)"
+                  name="velocidadMax"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Ingresa la velocidad máxima",
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    placeholder="45.0"
+                    style={{ width: "100%" }}
+                    min={0}
+                    step={0.1}
+                    precision={2}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Form.Item label="Bicicleta" name="idBici">
+              <Select placeholder="Selecciona una bici (opcional)" allowClear>
+                {bikes.map((bike) => (
+                  <Option key={bike.id_bici} value={bike.id_bici}>
+                    🚴 {bike.marca} {bike.modelo}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item label="Ruta" name="idRuta">
+              <Select placeholder="Selecciona una ruta (opcional)" allowClear>
+                {routes.map((route) => (
+                  <Option key={route.idRuta} value={route.idRuta}>
+                    🗺️ {route.nombreRuta} ({route.distancia} km)
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+              <Button onClick={handleCancel} style={{ marginRight: "8px" }}>
+                Cancelar
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                style={{ backgroundColor: "#fa8c16", borderColor: "#fa8c16" }}
               >
-                <DatePicker
-                  style={{ width: "100%" }}
-                  format="DD/MM/YYYY"
-                  placeholder="Selecciona la fecha"
-                />
-              </Form.Item>
-            </Col>
-
-            <Col span={12}>
-              <Form.Item
-                label="Duración"
-                name="duracion"
-                rules={[{ required: true, message: "Introduce la duración" }]}
-              >
-                <TimePicker
-                  style={{ width: "100%" }}
-                  format="HH:mm:ss"
-                  placeholder="HH:MM:SS"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Distancia (km)"
-                name="distancia"
-                rules={[{ required: true, message: "Ingresa la distancia" }]}
-              >
-                <InputNumber
-                  placeholder="45.5"
-                  style={{ width: "100%" }}
-                  min={0}
-                  step={0.1}
-                  precision={2}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col span={12}>
-              <Form.Item label="Calorias" name="calorias">
-                <InputNumber
-                  placeholder="850"
-                  style={{ width: "100%" }}
-                  min={0}
-                  step={1}
-                  precision={0}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Velocidad Media (km/h)"
-                name="velocidadMedia"
-                rules={[
-                  {
-                    required: true,
-                    message: "Ingresa la velocidad media",
-                  },
-                ]}
-              >
-                <InputNumber
-                  placeholder="25.5"
-                  style={{ width: "100%" }}
-                  min={0}
-                  step={0.1}
-                  precision={2}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col span={12}>
-              <Form.Item
-                label="Velocidad Maxima (km/h)"
-                name="velocidadMax"
-                rules={[
-                  {
-                    required: true,
-                    message: "Ingresa la velocidad máxima",
-                  },
-                ]}
-              >
-                <InputNumber
-                  placeholder="45.0"
-                  style={{ width: "100%" }}
-                  min={0}
-                  step={0.1}
-                  precision={2}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item label="Bicicleta" name="idBici">
-            <Select placeholder="Selecciona una bici (opcional)" allowClear>
-              {bikes.map((bike) => (
-                <Option key={bike.id_bici} value={bike.id_bici}>
-                  🚴 {bike.marca} {bike.modelo}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Ruta" name="idRuta">
-            <Select placeholder="Selecciona una ruta (opcional)" allowClear>
-              {routes.map((route) => (
-                <Option key={route.idRuta} value={route.idRuta}>
-                  🗺️ {route.nombreRuta} ({route.distancia} km)
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
-            <Button onClick={handleCancel} style={{ marginRight: "8px" }}>
-              Cancelar
-            </Button>
-            <Button
-              type="primary"
-              htmlType="submit"
-              style={{ backgroundColor: "#fa8c16", borderColor: "#fa8c16" }}
-            >
-              {editingActivity ? "Actualizar Actividad" : "Registrar Actividad"}
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
+                {editingActivity
+                  ? "Actualizar Actividad"
+                  : "Registrar Actividad"}
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
   );
 }
 
