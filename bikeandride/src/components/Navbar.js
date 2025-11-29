@@ -111,8 +111,8 @@ function Navbar({ showMenuItems = true }) {
             className="fa-solid fa-bicycle"
             style={{
               fontSize: "28px",
-              color: "#48e", // ← Mismo azul del login
-              textShadow: "0 0 10px rgba(68, 136, 238, 0.5)", // ← Brillo sutil
+              color: "#48e", 
+              textShadow: "0 0 10px rgba(68, 136, 238, 0.5)",
             }}
           />
           <span
@@ -120,6 +120,7 @@ function Navbar({ showMenuItems = true }) {
               color: "white",
               fontSize: "20px",
               fontWeight: "bold",
+              display: window.innerWidth < 768 ? 'none' : 'inline',
             }}
           >
             Bike & Ride

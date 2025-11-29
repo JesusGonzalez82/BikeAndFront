@@ -95,6 +95,7 @@ export const updateBike = async (bikeId, updates) => {
   if (updates.type) filteredUpdates.tipo = updates.type;
   if (updates.birthday) filteredUpdates.anio = updates.birthday;
   if (updates.status) filteredUpdates.status = updates.status;
+  if (updates.weight) filteredUpdates.weight = updates.weight;
 
   const response = await fetch(`${API_BIKES}/update/${bikeId}`, {
     method: 'PATCH',

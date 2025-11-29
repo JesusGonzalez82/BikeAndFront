@@ -19,8 +19,9 @@ import {
   Drawer,
   Tabs,
   Descriptions,
+  Space,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined, PictureOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined, PictureOutlined, InfoCircleOutlined, AppstoreOutlined, UnorderedListOutlined } from "@ant-design/icons";
 import { useRoutes } from "../context/RouteContext";
 import RouteCoverImage from "../components/RouteCoverImage";
 
@@ -36,6 +37,7 @@ function Routes() {
   const [form] = Form.useForm();
   const [drawerVisbile, setDrawerVisible] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState(null);
+  const [displayMode, setDisplayMode] = useState('cards');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -130,7 +132,7 @@ function Routes() {
   };
 
   return (
-    <div style={{ padding: "24px" }}>
+    <div style={{ padding: "24px", maxWidth: "100vw", width: '100%'}}>
       <div
         style={{
           display: "flex",
@@ -153,6 +155,31 @@ function Routes() {
         >
           Añadir Ruta
         </Button>
+      </div>
+
+      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'flex-end'}}>
+        <Space>
+          <Button
+            type={displayMode === 'cards' ? 'primary' : 'default'}
+            icon={<AppstoreOutlined />}
+            onClick={() => setDisplayMode('cards')}
+            style={{
+              backgroundColor: displayMode === 'cards' ? '#52c41a' : undefined,
+              borderColor: displayMode === 'cards' ? '#52c41a' : undefined
+            }}
+            className="button-hover"
+          />
+          <Button
+            type={displayMode === 'list' ? 'primary' : 'default'}
+            icon={<UnorderedListOutlined />}
+            onClick={() => setDisplayMode('list')}
+            style={{
+              backgroundColor: displayMode === 'list' ? '#52c41a' : undefined,
+              borderColor: displayMode === 'list' ? '#52c41a' : undefined
+            }}
+            className="button-hover"
+          />
+        </Space>
       </div>
 
       {loading && (
@@ -182,96 +209,218 @@ function Routes() {
         </Empty>
       )}
 
-      {!loading && routes.length > 0 && (
-        <Row gutter={[16, 16]}>
-          {routes.map((route) => (
-            <Col xs={24} sm={12} md={8} lg={6} key={route.idRuta}>
-              <Card
-                hoverable
-                onClick={() => handleCardClick(route)}
-                style={{ height: "100%", cursor: "pointer" }}
-                cover={
-                  <div
-                    style={{
-                      height: "150px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "80px",
-                      background: "linear-gradient(135deg, #52c41a 0%, #73d13d 100%)",
-                    }}
+{!loading && routes.length > 0 && (
+  <>
+    {displayMode === 'cards' ? (
+      <Row gutter={[16, 16]} className="fade-in-fast">
+        {routes.map((route) => (
+          <Col xs={24} sm={24} md={12} lg={8} key={route.idRuta} className="card-animate">
+            <Card
+              hoverable
+              onClick={() => handleCardClick(route)}
+              className="card-hover"
+              style={{ height: "100%", width: "100%", minWidth: "280px" }}
+              cover={
+                <div
+                  style={{
+                    height: "150px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "80px",
+                    background: "linear-gradient(135deg, #52c41a 0%, #73d13d 100%)",
+                  }}
+                >
+                  {getTerrainIcon(route.tipoTerreno)}
+                </div>
+              }
+              actions={[
+                <Button
+                  key="edit"
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    showEditModal(route);
+                  }}
+                >
+                  Editar
+                </Button>,
+                <Popconfirm
+                  key="delete"
+                  title="¿Eliminar ruta?"
+                  description="Esta acción no se puede deshacer"
+                  onConfirm={(e) => {
+                    e?.stopPropagation();
+                    handleDelete(route.idRuta);
+                  }}
+                  okText="Sí, eliminar"
+                  cancelText="Cancelar"
+                  okButtonProps={{ danger: true }}
+                >
+                  <Button 
+                    type="text" 
+                    danger 
+                    icon={<DeleteOutlined />}
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    {getTerrainIcon(route.tipoTerreno)}
+                    Eliminar
+                  </Button>
+                </Popconfirm>
+              ]}
+            >
+              <Card.Meta
+                title={
+                  <div style={{ fontSize: "16px", fontWeight: "bold" }}>
+                    {route.nombreRuta}
                   </div>
                 }
-                actions={[
-                  <Button
-                    key="edit"
-                    type="text"
-                    icon={<EditOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      showEditModal(route);
-                    }}
-                  >
-                    Editar
-                  </Button>,
-                  <Popconfirm
-                    key="delete"
-                    title="¿Eliminar ruta?"
-                    description="Esta acción no se puede deshacer"
-                    onConfirm={(e) => {
-                      e?.stopPropagation();
-                      handleDelete(route.idRuta);
-                    }}
-                    okText="Sí, eliminar"
-                    cancelText="Cancelar"
-                    okButtonProps={{ danger: true }}
-                  >
-                    <Button 
-                      type="text" 
-                      danger 
-                      icon={<DeleteOutlined />}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Eliminar
-                    </Button>
-                  </Popconfirm>
-                ]}
+                description={
+                  <div>
+                    <div style={{ marginBottom: "8px" }}>
+                      <Tag color={getTerrainColor(route.tipoTerreno)}>
+                        {route.tipoTerreno}
+                      </Tag>
+                    </div>
+                    <div style={{ marginBottom: "6px" }}>
+                      <Text strong>Distancia:</Text> {route.distancia} km
+                    </div>
+                    <div style={{ marginBottom: "6px" }}>
+                      <Text strong>Desnivel:</Text> {route.desnivel} m
+                    </div>
+                    {route.descripcionRuta && (
+                      <div style={{ marginTop: "8px", fontSize: "12px", color: "#8c8c8c" }}>
+                        {route.descripcionRuta.substring(0, 60)}
+                        {route.descripcionRuta.length > 60 ? "..." : ""}
+                      </div>
+                    )}
+                  </div>
+                }
+              />
+            </Card>
+          </Col>
+        ))}
+      </Row>
+) : (
+  // VISTA DE LISTA
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} className="fade-in-fast">
+    {routes.map((route) => (
+      <Card
+        key={route.idRuta}
+        hoverable
+        onClick={() => handleCardClick(route)}
+        className="card-hover slide-in-up"
+        style={{ cursor: 'pointer', width: '100%' }}
+      >
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          padding: '12px',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}>
+          {/* Icono del terreno - siempre visible */}
+          <div style={{ 
+            minWidth: '60px',
+            fontSize: window.innerWidth < 768 ? '32px' : '40px',
+            textAlign: 'center'
+          }}>
+            {getTerrainIcon(route.tipoTerreno)}
+          </div>
+
+          {/* Nombre de la ruta - siempre visible */}
+          <div style={{ flex: 1, minWidth: '150px' }}>
+            <Text strong style={{ fontSize: '16px', display: 'block' }}>
+              {route.nombreRuta}
+            </Text>
+            {/* Descripción solo en desktop */}
+            {window.innerWidth >= 768 && route.descripcionRuta && (
+              <div style={{ color: '#8c8c8c', fontSize: '12px', marginTop: '4px' }}>
+                {route.descripcionRuta.substring(0, 50)}
+                {route.descripcionRuta.length > 50 ? "..." : ""}
+              </div>
+            )}
+          </div>
+
+          {/* Tipo de terreno - solo desktop */}
+          {window.innerWidth >= 768 && (
+            <div style={{ minWidth: '100px', textAlign: 'center' }}>
+              <Tag color={getTerrainColor(route.tipoTerreno)}>
+                {route.tipoTerreno}
+              </Tag>
+            </div>
+          )}
+
+          {/* Distancia - siempre visible */}
+          <div style={{ minWidth: '80px', textAlign: 'center' }}>
+            <Text strong>📏 {route.distancia} km</Text>
+          </div>
+
+          {/* Desnivel - solo desktop */}
+          {window.innerWidth >= 768 && (
+            <div style={{ minWidth: '80px', textAlign: 'center' }}>
+              <Text strong>📈 {route.desnivel} m</Text>
+            </div>
+          )}
+
+          {/* Acciones - siempre visible */}
+          <div style={{ 
+            minWidth: window.innerWidth < 768 ? '100%' : '150px',
+            textAlign: 'right',
+            display: 'flex',
+            justifyContent: window.innerWidth < 768 ? 'space-around' : 'flex-end',
+            gap: '8px',
+            marginTop: window.innerWidth < 768 ? '8px' : '0'
+          }}>
+            <Space size="small">
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  showEditModal(route);
+                }}
+                style={{ 
+                  fontSize: window.innerWidth < 768 ? '14px' : '16px',
+                  padding: window.innerWidth < 768 ? '4px 8px' : undefined
+                }}
               >
-                <Card.Meta
-                  title={
-                    <div style={{ fontSize: "16px", fontWeight: "bold" }}>
-                      {route.nombreRuta}
-                    </div>
-                  }
-                  description={
-                    <div>
-                      <div style={{ marginBottom: "8px" }}>
-                        <Tag color={getTerrainColor(route.tipoTerreno)}>
-                          {route.tipoTerreno}
-                        </Tag>
-                      </div>
-                      <div style={{ marginBottom: "6px" }}>
-                        <Text strong>Distancia:</Text> {route.distancia} km
-                      </div>
-                      <div style={{ marginBottom: "6px" }}>
-                        <Text strong>Desnivel:</Text> {route.desnivel} m
-                      </div>
-                      {route.descripcionRuta && (
-                        <div style={{ marginTop: "8px", fontSize: "12px", color: "#8c8c8c" }}>
-                          {route.descripcionRuta.substring(0, 60)}
-                          {route.descripcionRuta.length > 60 ? "..." : ""}
-                        </div>
-                      )}
-                    </div>
-                  }
-                />
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      )}
+                {window.innerWidth >= 768 && "Editar"}
+              </Button>
+              <Popconfirm
+                title="¿Eliminar ruta?"
+                description="Esta acción no se puede deshacer"
+                onConfirm={(e) => {
+                  e?.stopPropagation();
+                  handleDelete(route.idRuta);
+                }}
+                okText="Sí, eliminar"
+                cancelText="Cancelar"
+                okButtonProps={{ danger: true }}
+              >
+                <Button 
+                  type="text" 
+                  danger 
+                  icon={<DeleteOutlined />}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ 
+                    fontSize: window.innerWidth < 768 ? '14px' : '16px',
+                    padding: window.innerWidth < 768 ? '4px 8px' : undefined
+                  }}
+                >
+                  {window.innerWidth >= 768 && "Eliminar"}
+                </Button>
+              </Popconfirm>
+            </Space>
+          </div>
+        </div>
+      </Card>
+    ))}
+  </div>
+)}
+  </>
+)}
 
       <Modal
         title={

@@ -27,6 +27,7 @@ import RoutesPage from "./pages/Routes";
 import Activities from "./pages/Activities";
 import Profile from "./pages/Profile";
 import Statistics from "./pages/Statistics";
+
 //import FloatingAddButton from "./components/FloatingButton";
 
 const { Header, Content, Footer } = Layout;

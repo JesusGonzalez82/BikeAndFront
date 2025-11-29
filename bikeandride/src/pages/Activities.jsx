@@ -61,6 +61,7 @@ import CommentSection from "../components/CommentSection";
 import { getComments } from "../services/commentService";
 import ActivityImageCarousel from "../components/ActivityImageCarousel";
 
+
 const styles = `
   @keyframes slideIn {
     from {
@@ -581,11 +582,13 @@ function Activities() {
               type={displayMode === "cards" ? "primary" : "default"}
               icon={<AppstoreOutlined />}
               onClick={() => setDisplayMode("cards")}
+              className="button-hover"
             ></Button>
             <Button
               type={displayMode === "list" ? "primary" : "default"}
               icon={<UnorderedListOutlined />}
               onClick={() => setDisplayMode("list")}
+              className="button-hover"
             ></Button>
           </Space>
         </div>
@@ -664,16 +667,18 @@ function Activities() {
           <>
             {displayMode === "cards" ? (
               // VISTA DE TARJETAS
-              <Row gutter={[16, 16]}>
+              <Row gutter={[16, 16]} className="fade-in-fast">
                 {displayActivities.map((activity) => (
                   <Col
                     xs={24}
                     sm={12}
                     lg={selectedActivity ? 24 : 12}
                     key={activity.idActividad}
+                    className="card-animate"
                   >
                     <Card
                       hoverable
+                      className="card-hover"
                       style={{
                         height: "100%",
                         border:
@@ -694,6 +699,7 @@ function Activities() {
                               background:
                                 "linear-gradient(135deg, #fa8c16 0%, #faad14 100%)",
                               display: "flex",
+                              borderRadius: "8px",
                               flexDirection: "column",
                               justifyContent: "center",
                               alignItems: "center",
@@ -834,11 +840,13 @@ function Activities() {
                   flexDirection: "column",
                   gap: "12px",
                 }}
+                className="fade-in-fast"
               >
                 {displayActivities.map((activity) => (
                   <Card
                     key={activity.idActividad}
                     hoverable
+                    className="card-hover slide-in-up"
                     style={{
                       cursor: "pointer",
                       border:
