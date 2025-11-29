@@ -1,31 +1,31 @@
 import React, { useState, useEffect } from "react";
 import dayjs from "dayjs";
-import { 
-  Typography, 
-  Card, 
-  Row, 
-  Col, 
-  Divider, 
-  Button, 
-  message, 
-  Spin, 
+import {
+  Typography,
+  Card,
+  Row,
+  Col,
+  Divider,
+  Button,
+  message,
+  Spin,
   Upload,
   Modal,
   Form,
   Input,
   DatePicker,
   Popconfirm,
-  Alert
+  Alert,
 } from "antd";
-import { 
-  EditOutlined, 
-  MailOutlined, 
-  CalendarOutlined, 
-  UserOutlined, 
+import {
+  EditOutlined,
+  MailOutlined,
+  CalendarOutlined,
+  UserOutlined,
   CameraOutlined,
   ExclamationCircleOutlined,
   CheckCircleOutlined,
-  StopOutlined
+  StopOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import ImageUpload from "../components/ImageUpload";
@@ -37,7 +37,13 @@ import {
   validateImageSize,
   validateImageType,
 } from "../services/imageService";
-import { updateUser, deactivateUser, reactivateUser } from "../services/userService";
+import {
+  updateUser,
+  deactivateUser,
+  reactivateUser,
+} from "../services/userService";
+import { getActivities } from '../services/activityServices';
+
 
 const { Title, Text } = Typography;
 
@@ -50,10 +56,17 @@ function Profile() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [savingChanges, setSavingChanges] = useState(false);
   const [form] = Form.useForm();
+  const [stats, setStats] = useState({
+    weekKm: 0,
+    monthKm: 0,
+    yearKm: 0,
+    totalActivities: 0
+  });
 
   useEffect(() => {
     if (user?.idUser) {
       loadImages();
+      loadStats();
     }
   }, [user]);
 
@@ -63,28 +76,69 @@ function Profile() {
 
       try {
         const profileUrl = await getProfileImage(user.idUser);
-        if (profileUrl){
+        if (profileUrl) {
           setProfileImage(profileUrl);
         }
-      } catch (err){
+      } catch (err) {
         console.log("No hay imagen de perfil");
       }
 
-      try{
+      try {
         const bannerUrl = await getBannerImage(user.idUser);
-        if(bannerUrl){
+        if (bannerUrl) {
           setBackgroundImage(bannerUrl);
         }
-      }catch(err){
+      } catch (err) {
         console.log("no hay ningun banner establecido");
       }
-    }catch (error){
+    } catch (error) {
       console.error("Error al cargar las imagenes: ", error);
-    }finally{
+    } finally {
       setLoading(false);
     }
-
   };
+
+  const loadStats = async () => {
+    try{
+      const activities = await getActivities();
+
+      const now = dayjs();
+      const startOfWeek = now.startOf('week').add(1, 'day');
+      const startOfMonth = now.startOf('month');
+      const startOfYear = now.startOf('year');
+
+      let weekKm = 0;
+      let monthKm = 0;
+      let yearKm = 0;
+
+      activities.forEach(activity => {
+        const activityDate = dayjs(activity.fecha);
+        const km = parseFloat(activity.distancia) || 0;
+
+        if (activityDate.isAfter(startOfWeek) || activityDate.isSame(startOfWeek, 'day' )) {
+          weekKm += km;
+        }
+
+        if (activityDate.isAfter(startOfMonth) || activityDate.isSame(startOfMonth, 'day')) {
+          monthKm += km;
+        }
+        
+        if (activityDate.isAfter(startOfYear) || activityDate.isSame(startOfYear, 'day')) {
+          yearKm += km;
+        }
+      });
+
+      setStats({
+        weekKm: weekKm.toFixed(2),
+        monthKm: monthKm.toFixed(2),
+        yearKm: yearKm.toFixed(2),
+        totalActivities: activities.length
+      });
+    } catch (error) {
+      console.error("Error al cargar las estadisticas: ", error);
+    }
+  };
+
 
   const handleProfileUploadSuccess = () => {
     message.success("Foto de perfil actualizada");
@@ -147,7 +201,7 @@ function Profile() {
       };
 
       await updateUser(user.idUser, updateData);
-      
+
       // Actualizar contexto
       const updatedUser = {
         ...user,
@@ -172,29 +226,37 @@ function Profile() {
     console.log("user ID: ", user.idUser);
 
     try {
-      console.log("Guardando en localStorage ANTES de desactivar:", user.idUser);
-    localStorage.setItem('deactivatedUserId', user.idUser);
-    console.log("Verificando guardado:", localStorage.getItem('deactivatedUserId'));
-    
-    console.log("Llamando a deactivateUser con ID:", user.idUser);
-    await deactivateUser(user.idUser);
-    
-    console.log("✅ Usuario desactivado exitosamente");
-    
-    const updatedUser = { ...user, status: "inactivo" };
-    updateUserContext(updatedUser);
+      console.log(
+        "Guardando en localStorage ANTES de desactivar:",
+        user.idUser
+      );
+      localStorage.setItem("deactivatedUserId", user.idUser);
+      console.log(
+        "Verificando guardado:",
+        localStorage.getItem("deactivatedUserId")
+      );
 
-    message.warning("Cuenta desactivada. Puedes reactivarla en cualquier momento.");
-  } catch (error) {
-    console.error("❌ Error deactivating account:", error);
-    message.error("Error al desactivar la cuenta");
+      console.log("Llamando a deactivateUser con ID:", user.idUser);
+      await deactivateUser(user.idUser);
+
+      console.log("✅ Usuario desactivado exitosamente");
+
+      const updatedUser = { ...user, status: "inactivo" };
+      updateUserContext(updatedUser);
+
+      message.warning(
+        "Cuenta desactivada. Puedes reactivarla en cualquier momento."
+      );
+    } catch (error) {
+      console.error("❌ Error deactivating account:", error);
+      message.error("Error al desactivar la cuenta");
     }
   };
 
   const handleReactivateAccount = async () => {
     try {
       await reactivateUser(user.idUser);
-      
+
       const updatedUser = { ...user, status: "activo" };
       updateUserContext(updatedUser);
 
@@ -243,7 +305,11 @@ function Profile() {
           showIcon
           icon={<ExclamationCircleOutlined />}
           action={
-            <Button size="small" type="primary" onClick={handleReactivateAccount}>
+            <Button
+              size="small"
+              type="primary"
+              onClick={handleReactivateAccount}
+            >
               Reactivar Cuenta
             </Button>
           }
@@ -259,7 +325,7 @@ function Profile() {
           position: "relative",
         }}
         styles={{
-          body: { padding: 0 }
+          body: { padding: 0 },
         }}
       >
         {/* Imagen de fondo con overlay */}
@@ -285,7 +351,8 @@ function Profile() {
               left: 0,
               right: 0,
               bottom: 0,
-              background: "linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(255,255,255,0.95))",
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(255,255,255,0.95))",
             }}
           />
         </div>
@@ -319,7 +386,14 @@ function Profile() {
                 Ciclista | Miembro desde{" "}
                 {user?.birthday ? dayjs(user.birthday).format("YYYY") : "N/A"}
               </Text>
-              <div style={{ marginTop: "16px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              <div
+                style={{
+                  marginTop: "16px",
+                  display: "flex",
+                  gap: "12px",
+                  flexWrap: "wrap",
+                }}
+              >
                 <Button
                   type="primary"
                   icon={<EditOutlined />}
@@ -352,7 +426,9 @@ function Profile() {
                 type="inner"
                 title={
                   <span>
-                    <UserOutlined style={{ marginRight: "8px", color: "#1890ff" }} />
+                    <UserOutlined
+                      style={{ marginRight: "8px", color: "#1890ff" }}
+                    />
                     Información Personal
                   </span>
                 }
@@ -404,27 +480,53 @@ function Profile() {
             </Col>
 
             <Col xs={24} md={12}>
-              <Card
-                type="inner"
-                title={
-                  <span>
-                    <i
-                      className="fa-solid fa-bicycle"
-                      style={{ marginRight: "8px", color: "#52c41a" }}
-                    ></i>
-                    Estadísticas
-                  </span>
-                }
-              >
-                <div style={{ textAlign: "center", padding: "20px" }}>
-                  <Text type="secondary">
-                    Próximamente verás aquí tus estadísticas de ciclismo:
-                    <br />
-                    kilómetros totales, actividades, rutas favoritas, etc.
-                  </Text>
-                </div>
-              </Card>
-            </Col>
+  <Card
+    type="inner"
+    title={
+      <span>
+        <i
+          className="fa-solid fa-bicycle"
+          style={{ marginRight: "8px", color: "#52c41a" }}
+        ></i>
+        Estadísticas
+      </span>
+    }
+  >
+    {/* Esta Semana */}
+    <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Text type="secondary">📅 Esta Semana</Text>
+      <Text strong style={{ fontSize: "18px", color: "#667eea" }}>
+        {stats.weekKm} km
+      </Text>
+    </div>
+
+    {/* Este Mes */}
+    <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Text type="secondary">📆 Este Mes</Text>
+      <Text strong style={{ fontSize: "18px", color: "#52c41a" }}>
+        {stats.monthKm} km
+      </Text>
+    </div>
+
+    {/* Este Año */}
+    <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Text type="secondary">🗓️ Este Año</Text>
+      <Text strong style={{ fontSize: "18px", color: "#fa8c16" }}>
+        {stats.yearKm} km
+      </Text>
+    </div>
+
+    <Divider style={{ margin: "16px 0" }} />
+
+    {/* Total actividades */}
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Text type="secondary">🏆 Total de Actividades</Text>
+      <Text strong style={{ fontSize: "18px" }}>
+        {stats.totalActivities}
+      </Text>
+    </div>
+  </Card>
+</Col>
           </Row>
         </div>
       </Card>
@@ -453,7 +555,7 @@ function Profile() {
             name="name"
             rules={[
               { required: true, message: "El nombre es obligatorio" },
-              { min: 2, message: "El nombre debe tener al menos 2 caracteres" }
+              { min: 2, message: "El nombre debe tener al menos 2 caracteres" },
             ]}
           >
             <Input placeholder="Tu nombre completo" />
@@ -464,7 +566,7 @@ function Profile() {
             name="email"
             rules={[
               { required: true, message: "El email es obligatorio" },
-              { type: "email", message: "Email inválido" }
+              { type: "email", message: "Email inválido" },
             ]}
           >
             <Input placeholder="tu@email.com" disabled />
@@ -474,7 +576,10 @@ function Profile() {
             label="Fecha de Nacimiento"
             name="birthday"
             rules={[
-              { required: true, message: "La fecha de nacimiento es obligatoria" }
+              {
+                required: true,
+                message: "La fecha de nacimiento es obligatoria",
+              },
             ]}
           >
             <DatePicker
@@ -488,7 +593,14 @@ function Profile() {
 
           {/* Sección de desactivar cuenta */}
           <div style={{ marginBottom: "24px" }}>
-            <Text strong style={{ fontSize: "16px", display: "block", marginBottom: "12px" }}>
+            <Text
+              strong
+              style={{
+                fontSize: "16px",
+                display: "block",
+                marginBottom: "12px",
+              }}
+            >
               Zona de Peligro
             </Text>
             {isActive ? (
