@@ -63,16 +63,29 @@ export function BikeProvider({ children }) {
 
     // Funcion para editar una bicicleta
     const updateBike = async (id, updates) => {
-        try {
-            const updateBike = await updateBikeService(id, updates);
-            setBikes(bikes.map(bike => bike.id_bici === id ? updateBike : bike));
-            message.success("Bicicleta actualizada con exito");
-            return updateBike;
-        }catch (error) {
-            message.error(error.message || "Error al actualizar la biciccleta");
-            throw error;
-        }
+    try {
+        const updatedBikeFromBackend = await updateBikeService(id, updates);
+        
+        // Mapear la respuesta del backend al formato del frontend
+        const mappedBike = {
+            id_bici: updatedBikeFromBackend.idBike,
+            marca: updatedBikeFromBackend.bike_brand,
+            modelo: updatedBikeFromBackend.model,
+            anio: updatedBikeFromBackend.birthday,
+            tipo_bici: updatedBikeFromBackend.type,
+            peso: updatedBikeFromBackend.weight,           // ← AQUÍ está la magia
+            material: updatedBikeFromBackend.bike_material,
+            status: updatedBikeFromBackend.status,
+        };
+        
+        setBikes(bikes.map(bike => bike.id_bici === id ? mappedBike : bike));
+        message.success("Bicicleta actualizada con exito");
+        return mappedBike;
+    } catch (error) {
+        message.error(error.message || "Error al actualizar la biciccleta");
+        throw error;
     }
+}
 
     // // Funciona para eliminar una bicicleta
     // const deleteBike = async (id) => {

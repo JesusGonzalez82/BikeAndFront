@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 import { getUserStats } from "../services/statsService";
+import { getRoutes } from "../services/routeService";
 import { message } from "antd";
 
 const StatsContext = createContext();
@@ -18,6 +19,7 @@ export function StatsProvider({ children}) {
         totalRoutes: 0,
         TotalActivities: 0,
         totalKm: 0,
+        routes: [],
     });
     const [loading, setLoading] = useState(false);
     
@@ -25,12 +27,16 @@ const loadStats = async () => {
   try {
     setLoading(true);
     
-    const [data] = await Promise.all([
+    const [data, routesData] = await Promise.all([
       getUserStats(),
+      getRoutes(),
       new Promise(resolve => setTimeout(resolve, 500))
     ]);
     
-    setStats(data);
+    setStats({
+      ...data,
+      routes: routesData || [],
+  });
   } catch (error) {
     console.error("Error al cargar las estadísticas:", error);
     message.error("Error al cargar las estadísticas");

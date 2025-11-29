@@ -1,0 +1,180 @@
+/* 
+ANIMACIONES GLOBALES DE LA PAGINA
+*/
+
+/* Aparicion suave de los modales */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Cambios de vista */
+@keyframes fadeInFast {
+    form{
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* slide In desde derecha */
+@keyframes slideInRight {
+    from{
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Slide In desde abajo */
+@keyframes slideInUp {
+    from{
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Scale In para modales */
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Pulse - Para los botones importantes */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(24, 144, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(24, 144, 255, 0);
+    }
+}
+
+/* 
+CLASES DE UTILIDAD
+*/
+
+/* contenedor con fade-in*/
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.fade-in-fast {
+    animation: fadeInFast 0.3s ease-out;
+}
+
+.slide-in-right {
+    animation: slideInRight 0.4s ease-out ;
+}
+
+.slide-in-up {
+    animation: slideInUp 0.4s ease-out;
+}
+
+/* Animacion escalonada para las cards */
+.card-animate {
+    animation: fadeIn 0.5s ease-out;
+    animation-fill-mode: both;
+}
+
+.card-animate:nth-child(1) { animation-delay: 0.05s; }
+.card-animate:nth-child(2) { animation-delay: 0.1s; }
+.card-animate:nth-child(3) { animation-delay: 0.15s; }
+.card-animate:nth-child(4) { animation-delay: 0.2s; }
+.card-animate:nth-child(5) { animation-delay: 0.25s; }
+.card-animate:nth-child(6) { animation-delay: 0.3s; }
+.card-animate:nth-child(7) { animation-delay: 0.35s; }
+.card-animate:nth-child(8) { animation-delay: 0.4s; }
+
+/* 
+HOVER PARA LOS BOTONES y CARDS MEJORADOS
+*/
+
+/* Cards con hover mejorados */
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Botones con hover */
+.button-hover {
+    transition: all 0.2s ease;
+}
+
+.button-hover:hover {
+    transform: scale(1.05);
+}
+
+.button-hover:active {
+    transform: scale(0.98);
+}
+
+/*
+TRANSICIONES SUAVES
+*/
+
+/* Para los cambios de contenido */
+.content-transition {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Para switches y toggles */
+.content-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+RESPONSIVE - REDUCIR ANIMACIONES EN MOVILES
+*/
+@media (max-width: 768px) {
+    .fade-in,
+    .card-animate {
+        animation-duration: 0.3s;
+    }
+
+    .card-animate:nth-child(n) {
+        animation-delay: 0s;
+    }
+}
+
+/*
+RESPETAR PREFERENCIAS
+*/
+
+@media (prefers-reduced-motion: reduce){
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+

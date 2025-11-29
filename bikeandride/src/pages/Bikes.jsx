@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Card,
   Row,
@@ -16,27 +17,46 @@ import {
   Tag,
   Drawer,
   Tabs,
-  Descriptions
+  Descriptions,
+  Space,
+  Popconfirm,
+  Switch,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined, InfoCircleOutlined, ToolOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined, InfoCircleOutlined, ToolOutlined, AppstoreOutlined, UnorderedListOutlined, EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
 import { useBikes } from "../context/BikeContext";
 import BikeImageCarousel from "../components/BikeImageCarousel";
+import '../styles/animation.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TabPane } = Tabs;
 
 function Bikes() {
-  const { bikes, loading, fetchBikes, addBike, updateBike } = useBikes();
+  const { bikes, loading, fetchBikes, addBike, updateBike, deleteBike } = useBikes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBike, setEditingBike] = useState(null);
+  const [displayMode, setDisplayMode] = useState('cards');
+  const [showSoldBikes, setShowSoldBikes] = useState(() => {
+    const saved = localStorage.getItem('showSoldBikes');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [form] = Form.useForm();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedBike, setSelectedBike] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchBikes();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('action') === 'create') {
+      showAddModal();
+      navigate('/bikes', {replace: true});
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (bikes.length > 0) {
@@ -53,9 +73,9 @@ function Bikes() {
   const showEditModal = (bike) => {
     setEditingBike(bike);
     form.setFieldsValue({
-      tipo_bici: bike.type,
-      anio: parseInt(bike.birthday),
-      // weight: bike.peso ? parseFloat(bike.peso) : null,
+      type: bike.tipo_bici,
+      birthday: bike.anio ? Number(bike.anio) : null,
+      weight: bike.peso ? Number(bike.peso) : null,
       status: bike.status,
     });
     setIsModalOpen(true);
@@ -65,6 +85,11 @@ function Bikes() {
     setIsModalOpen(false);
     setEditingBike(null);
     form.resetFields();
+  };
+
+  const handleToggleSoldBikes = (checked) => {
+    setShowSoldBikes(checked);
+    localStorage.setItem('showSoldBikes', JSON.stringify(checked));
   };
 
 const handleSave = async (values) => {
@@ -109,7 +134,7 @@ const handleSave = async (values) => {
         bike_brand: values.bike_brand,
         model: values.model,
         birthday: values.birthday.toString(),
-        weight: parseFloat(values.weight),
+        weight: values.peso ? parseFloat(values.peso) : null,
         bike_material: values.bike_material || null,
         status: values.status,
         user: { idUser: user.idUser }
@@ -138,15 +163,15 @@ const handleDrawerClose = () => {
   setSelectedBike(null);
 };
 
-  // const handleDelete = async (bikeId) => {
-  //     try{
-  //         await deleteBike(bikeId);
-  //         message.success('Bicicleta eliminada correctamente');
-  //         fetchBikes();
-  //     }catch (error){
-  //         message.error(error.message || 'Error al eliminar la bicicleta');
-  //     }
-  // };
+  const handleDelete = async (bikeId) => {
+      try {
+          await updateBike(bikeId, { status: 'vendida' });
+          message.success('Bicicleta marcada como vendida');
+          fetchBikes();
+      } catch (error) {
+          message.error(error.message || 'Error al marcar como vendida');
+      }
+  };
 
   const getBikeIcon = (type) => {
     const icons = {
@@ -170,7 +195,7 @@ const handleDrawerClose = () => {
   };
 
   return (
-    <div style={{ padding: "40px 24px", minHeight: "calc(100vh - 200vh" }}>
+    <div style={{ padding: "40px 24px", minHeight: "calc(100vh - 200vh)", maxWidth: "100vw", width: "100%" }}>
       <div
         style={{
           display: "flex",
@@ -196,6 +221,36 @@ const handleDrawerClose = () => {
           Añadir Bicicletas
         </Button>
       </div>
+      <div style={{ marginBottom: "24px", display: "flex", justifyContent: "flex-end", gap: "16px", alignItems: "center" }}>
+  
+  <Space>
+    <Text style={{ marginRight: "8px" }}>Mostrar vendidas:</Text>
+    <Switch
+      checked={showSoldBikes}
+      onChange={handleToggleSoldBikes}
+      checkedChildren={<EyeOutlined />}
+      unCheckedChildren={<EyeInvisibleOutlined />}
+    />
+  </Space>
+  
+  {/* Space existente con botones Cards/Lista */}
+  <Space>
+    <Button
+      type={displayMode === 'cards' ? 'primary' : 'default'}
+      icon={<AppstoreOutlined />}
+      onClick={() => setDisplayMode('cards')}
+      className="button-hover"
+    >
+    </Button>
+    <Button
+      type={displayMode === 'list' ? 'primary' : 'default'}
+      icon={<UnorderedListOutlined />}
+      onClick={() => setDisplayMode('list')}
+      className="button-hover"
+    >
+    </Button>
+  </Space>
+</div>
       {loading && (
         <div style={{ textAlign: "center", padding: "100px 50px " }}>
           <Spin size="large" />
@@ -224,92 +279,250 @@ const handleDrawerClose = () => {
         </Empty>
       )}
 
-      {!loading && bikes.length > 0 && (
-        <Row gutter={[16, 16]}>
-          {bikes.map((bike) => (
-            <Col xs={24} sm={12} md={8} lg={6} key={bike.id_bici} style={{ display: 'flex'}}>
-              <Card
-                hoverable
-                onClick={() => handleCardClick(bike)}
-                style={{ height: "100%" ,width: "100%", minWidth: "280px", maxWidth:"400px" }}
-                cover={
-                  <div
-                    style={{
-                      height: "100px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "60px",
-                      background:
-                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    }}
+{!loading && bikes.length > 0 && (
+  <>
+    {(() => {
+      const filteredBikes = showSoldBikes
+        ? bikes
+        : bikes.filter(bike => bike.status !== 'vendida');
+      
+      return (
+        <>
+          {displayMode === 'cards' ? (
+            <Row gutter={[16, 16]} className="fade-in-fast">
+              {filteredBikes.map((bike) => (
+                <Col xs={24} sm={12} md={12} lg={12} xl={8} key={bike.id_bici} className="card-animate">
+                  <Card
+                    hoverable
+                    onClick={() => handleCardClick(bike)}
+                    className="card-hover"
+                    style={{ height: "100%" ,width: "100%", minWidth: '280px'}}
+                    cover={
+                      <div
+                        style={{
+                          height: "100px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "60px",
+                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        }}
+                      >
+                        {getBikeIcon(bike.tipo_bici)}
+                      </div>
+                    }
+                    actions={[
+                      <Button
+                        type="text"
+                        icon={<EditOutlined />}
+                        disabled={bike.status === "vendida"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (bike.status !== "vendida"){
+                            showEditModal(bike);
+                          }
+                        }}
+                      >
+                        {bike.status === "vendida" ? "vendida" : "Editar"}
+                      </Button>,
+                      <Popconfirm
+                        key="delete"
+                        title="¿Eliminar bicicleta?"
+                        description={bike.status === 'vendida' ? "No puedes eliminar una bici vendida" : "Esta acción no se puede deshacer"}
+                        onConfirm={(e) => {
+                          e?.stopPropagation();
+                          handleDelete(bike.id_bici);
+                        }}
+                        okText="Sí, eliminar"
+                        cancelText="Cancelar"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <Button 
+                          type="text" 
+                          danger 
+                          icon={<DeleteOutlined />}
+                          disabled={bike.status === 'vendida'}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {bike.status === 'vendida' ? 'Vendida' : 'Eliminar'}
+                        </Button>
+                      </Popconfirm>,
+                    ]}
                   >
-                    {getBikeIcon(bike.tipo_bici)}
-                  </div>
-                }
-                actions={[
-                  <Button
-                    type="text"
-                    icon={<EditOutlined />}
-                    disabled={bike.status === "vendida"}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (bike.status !== "vendida"){
-                      showEditModal(bike);
+                    <Card.Meta
+                      title={
+                        <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+                          {bike.marca} {bike.modelo}
+                        </div>
                       }
-                    }}
-                  >
-                    {bike.status === "vendida" ? "vendida" : "Editar"}
-                  </Button>,
-                  <Button
-                    type="text"
-                    danger
-                    icon={<DeleteOutlined />}
-                    disabled
-                    onClick={(e) => e.stopPropagation()}
-                    title="Eliminar no disponible"
-                  >
-                    Eliminar
-                  </Button>,
-                ]}
-              >
-                <Card.Meta
-                  title={
-                    <div style={{ fontSize: "18px", fontWeight: "bold" }}>
-                      {bike.marca} {bike.modelo}
-                    </div>
-                  }
-                  description={
-                    <div>
-                      <div style={{ marginBottom: "8px" }}>
-                        <Tag color={getStatusColor(bike.status)}>
-                          {bike.status}
-                        </Tag>
-                      </div>
-                      <div style={{ marginBottom: "8px" }}>
-                        <Text strong>Año:</Text> {bike.anio}
-                      </div>
-                      <div style={{ marginBottom: "8px" }}>
-                        <Text strong>Tipo:</Text> {bike.tipo_bici}
-                      </div>
-                      {bike.peso && (
-                        <div style={{ marginBottom: "8px" }}>
-                          <Text strong>Peso:</Text> {parseFloat(bike.peso).toFixed(2)} kg
-                        </div>
-                      )}
-                      {bike.material && (
+                      description={
                         <div>
-                          <Text strong>Material:</Text> {bike.material}
+                          <div style={{ marginBottom: "8px" }}>
+                            <Tag color={getStatusColor(bike.status)}>
+                              {bike.status}
+                            </Tag>
+                          </div>
+                          <div style={{ marginBottom: "8px" }}>
+                            <Text strong>Año:</Text> {bike.anio}
+                          </div>
+                          <div style={{ marginBottom: "8px" }}>
+                            <Text strong>Tipo:</Text> {bike.tipo_bici}
+                          </div>
+                          {bike.peso && (
+                            <div style={{ marginBottom: "8px" }}>
+                              <Text strong>Peso:</Text> {parseFloat(bike.peso).toFixed(2)} kg
+                            </div>
+                          )}
+                          {bike.material && (
+                            <div>
+                              <Text strong>Material:</Text> {bike.material}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      }
+                    />
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+) : (
+  // VISTA DE LISTA
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }} className="fade-in-fast">
+    {filteredBikes.map((bike) => (
+      <Card
+        key={bike.id_bici}
+        hoverable
+        onClick={() => handleCardClick(bike)}
+        className="card-hover slide-in-up"
+        style={{ cursor: 'pointer', width: '100%' }}
+      >
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          padding: '12px',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}>
+          {/* Icono - siempre visible */}
+          <div style={{ minWidth: '60px', display: 'flex', justifyContent: 'center' }}>
+            {bike.image_url ? (
+              <img 
+                src={bike.image_url} 
+                alt={bike.modelo}
+                style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }}
+              />
+            ) : (
+              <div style={{ 
+                width: '50px', 
+                height: '50px', 
+                backgroundColor: '#f0f0f0', 
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px'
+              }}>
+                🚴
+              </div>
+            )}
+          </div>
+
+          {/* Marca y Modelo - siempre visible */}
+          <div style={{ flex: 1, minWidth: '150px' }}>
+            <Text strong style={{ fontSize: '16px', display: 'block' }}>
+              {bike.marca}
+            </Text>
+            <div style={{ color: '#666', fontSize: '14px' }}>{bike.modelo}</div>
+          </div>
+
+          {/* Tipo - solo desktop */}
+          <div style={{ 
+            minWidth: '100px', 
+            textAlign: 'center',
+            display: window.innerWidth < 768 ? 'none' : 'block'
+          }}>
+            <Tag color="blue">{bike.tipo_bici}</Tag>
+          </div>
+
+          {/* Año - solo desktop */}
+          <div style={{ 
+            minWidth: '80px', 
+            textAlign: 'center',
+            display: window.innerWidth < 768 ? 'none' : 'block'
+          }}>
+            📅 {bike.anio}
+          </div>
+
+          {/* Peso - móvil y desktop */}
+          <div style={{ minWidth: '80px', textAlign: 'center', marginRight: window.innerWidth < 768 ? '8px' : '0'  }}>
+            <Text strong>⚖️ {bike.peso} kg</Text>
+          </div>
+
+          {/* Acciones - siempre visible */}
+          <div style={{ 
+            minWidth: window.innerWidth < 768 ? '100%' : '150px',
+            textAlign: 'right',
+            display: 'flex',
+            justifyContent: window.innerWidth < 768 ? 'space-around' : 'flex-end',
+            gap: '8px',
+            marginTop: window.innerWidth < 768 ? '8px' : '0'
+          }}>
+            <Space size="small">
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                disabled={bike.status === "vendida"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (bike.status !== "vendida") {
+                    showEditModal(bike);
                   }
-                />
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      )}
+                }}
+                style={{ 
+                  fontSize: window.innerWidth < 768 ? '14px' : '16px',
+                  padding: window.innerWidth < 768 ? '4px 8px' : undefined
+                }}
+              >
+                {window.innerWidth >= 768 && (bike.status === "vendida" ? "Vendida" : "Editar")}
+              </Button>
+              <Popconfirm
+                title="¿Eliminar bicicleta?"
+                description={bike.status === 'vendida' ? "No puedes eliminar una bici vendida" : "Esta acción no se puede deshacer"}
+                onConfirm={(e) => {
+                  e?.stopPropagation();
+                  handleDelete(bike.id_bici);
+                }}
+                okText="Sí, eliminar"
+                cancelText="Cancelar"
+                okButtonProps={{ danger: true }}
+              >
+                <Button 
+                  type="text" 
+                  danger 
+                  icon={<DeleteOutlined />}
+                  disabled={bike.status === 'vendida'}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ 
+                    fontSize: window.innerWidth < 768 ? '14px' : '16px',
+                    padding: window.innerWidth < 768 ? '4px 8px' : undefined
+                  }}
+                >
+                  {window.innerWidth >= 768 && (bike.status === 'vendida' ? 'Vendida' : 'Eliminar')}
+                </Button>
+              </Popconfirm>
+            </Space>
+          </div>
+        </div>
+      </Card>
+    ))}
+  </div>
+)}
+        </>
+      );
+    })()}
+  </>
+)}
 
       <Modal
         title={
