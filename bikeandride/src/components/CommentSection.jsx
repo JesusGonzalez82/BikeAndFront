@@ -30,6 +30,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
 import { formatDateToSpanish } from "../utils/dateUtils";
+import { getProfileImage } from "../services/imageService";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
@@ -46,6 +47,7 @@ function CommentSection({ activityId }) {
     const [newComment, setNewComment] = useState("");
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [editingText, setEditingText] = useState("");
+    const [userImages, setUserImages] = useState({});
 
     useEffect(() => {
         loadComments();
@@ -57,12 +59,35 @@ function CommentSection({ activityId }) {
             const data = await getComments(activityId);
             console.log("Comentarios recibidos: ", data)
             setComments(data);
+
+            const uniqueUsersId = [...new Set(data.map(c => c.idUsuario))];
+            const images = {};
+
+            await Promise.all(
+                uniqueUsersId.map(async (userId) => {
+                    try{
+                        const imageUrl = await getProfileImage(userId);
+                        images[userId] = imageUrl;
+                    }catch {
+                        console.log(`No hay imagenes para ${userId}`);
+                        images[userId] = null;
+                    }
+                })
+            );
+            setUserImages(images);
         }catch (error){
             console.error("Error loading comments: ", error);
             message.error("Error al cargar los comentarios");
         }finally {
             setLoading(false);
         }
+    };
+
+    const getUserName = (userId) => {
+        if (userId === user?.idUser) {
+            return user?.name || "Tú";
+        }
+        return `Usuario #${userId}`;
     };
 
     const handleAddComment = async () => {
@@ -233,13 +258,21 @@ function CommentSection({ activityId }) {
                                 <List.Item.Meta
                                     avatar={
                                         <Avatar
-                                            style={{ backgroundcolor: "#1890ff"}}
-                                            icon={<UserOutlined />}
-                                        />
-                                    }
+                                            style={{ 
+                                                backgroundColor: userImages[comment.idUsuario] ? "transparent" : "#1890ff",
+                                                border: userImages[comment.idUsuario] ? "2px solid #f0f0f0" : "none"
+                                            }}
+                                            icon={!userImages[comment.idUsuario] && !getUserName(comment.idUsuario) ? <UserOutlined /> : null}
+                                            src={userImages[comment.idUsuario]}
+                                        >
+                                            {!userImages[comment.idUsuario] && getUserName(comment.idUsuario) 
+                                                ? getUserName(comment.idUsuario).charAt(0).toUpperCase() 
+                                                : null}
+                                        </Avatar>
+}
                                     title={
                                         <Space>
-                                            <Text strong>{comment.idUsuario === user?.idUser ? user?.name : `Usuario #${comment.idUsuario}`}</Text>
+                                            <Text strong>{getUserName(comment.idUsuario)}</Text>
                                             <Text type="secondary" style={{ fontSize: "12px"}}>
                                                 {comment.fecha
                                                     ? dayjs(comment.fecha).isSame(dayjs(), 'day')
